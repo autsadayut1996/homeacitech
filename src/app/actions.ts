@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { BriefInputSchema, type BriefInput } from "@/lib/brief";
+import { jurisdictionForProvince } from "@/lib/compliance/server";
 
 export async function setLocale(locale: "th" | "en") {
   (await cookies()).set("locale", locale, { path: "/", maxAge: 60 * 60 * 24 * 365 });
@@ -47,9 +48,7 @@ export async function saveBrief(input: unknown, projectId?: string, title?: stri
     note: b.customer.note || null,
   };
   const autoTitle = title?.trim() || `${b.customer.name} — ${b.land.province}`;
-  const jurisdiction = await db.jurisdiction.findFirst({
-    where: { code: /กรุงเทพ|bangkok/i.test(b.land.province) ? "TH-BKK" : "TH-DEFAULT" },
-  });
+  const jurisdiction = await jurisdictionForProvince(b.land.province);
 
   if (projectId) {
     const existing = await db.project.findUniqueOrThrow({ where: { id: projectId } });

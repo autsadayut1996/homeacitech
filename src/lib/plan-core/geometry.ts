@@ -242,3 +242,22 @@ export function compassBearing(dir: Point, northAngleDeg: number): number {
   const fromPlusY = (Math.atan2(dir[0], dir[1]) * 180) / Math.PI;
   return (((fromPlusY - northAngleDeg) % 360) + 360) % 360;
 }
+
+export function pointSegmentDistance(p: Point, [a, b]: Segment): number {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2));
+  return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
+}
+
+function segmentsIntersect([a, b]: Segment, [c, d]: Segment): boolean {
+  const o = (p: Point, q: Point, r: Point) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+  return o(a, b, c) !== o(a, b, d) && o(c, d, a) !== o(c, d, b);
+}
+
+/** Shortest distance between two segments (0 if they cross). */
+export function segmentDistance(s: Segment, t: Segment): number {
+  if (segmentsIntersect(s, t)) return 0;
+  return Math.min(pointSegmentDistance(s[0], t), pointSegmentDistance(s[1], t), pointSegmentDistance(t[0], s), pointSegmentDistance(t[1], s));
+}

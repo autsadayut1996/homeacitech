@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { FACING_BEARING, northAngleForFrontFacing, sqWaToSqm, type Facing, type Site } from "./plan-core";
 import { area } from "./plan-core/geometry";
+import { envelopeSetbacks, type RuleData } from "./compliance/rules";
 
 export const FACINGS = Object.keys(FACING_BEARING) as Facing[];
 export const ROAD_SIDES = ["front", "right", "back", "left"] as const;
@@ -39,6 +40,8 @@ export const LandSchema = z
     roads: z.array(z.object({ side: z.union([z.enum(ROAD_SIDES), z.number().int().min(0)]), widthM: reqNum(1) })).min(1),
     province: z.string().min(1),
     district: z.string().optional(),
+    /** Land-use zone of the comprehensive plan (e.g. "ย.3"), used for FAR/OSR. */
+    zone: z.string().optional(),
   })
   .superRefine((v, ctx) => {
     if (v.shape === "rect" && (!v.widthM || !v.depthM)) {
@@ -92,17 +95,23 @@ export function landBoundary(land: Land): [number, number][] {
 
 const SIDE_EDGE: Record<RoadSide, number> = { front: 0, right: 1, back: 2, left: 3 };
 
-/** Placeholder until the rules engine (M7) computes legal setbacks. */
+/** Used only when no regulation rules are available for the plot. */
 export const PROVISIONAL_SETBACK_M = 2;
 
-export function siteFromLand(land: Land): Site {
+/**
+ * Site for a plot. With `rules`, setbacks are the regulation envelope (opening distance on every
+ * side, plus road setbacks); without, a provisional 2 m on every side.
+ */
+export function siteFromLand(land: Land, rules?: RuleData[], opts: { floors?: number; buildingType?: string } = {}): Site {
   const boundary = landBoundary(land);
-  return {
+  const site: Site = {
     boundary,
     northAngleDeg: northAngleForFrontFacing(land.frontFacing),
     roads: land.roads.map((r) => ({ edgeIndex: typeof r.side === "number" ? r.side : SIDE_EDGE[r.side], widthM: r.widthM })),
     setbacks: boundary.map((_, edgeIndex) => ({ edgeIndex, distanceM: PROVISIONAL_SETBACK_M })),
   };
+  if (rules?.length) site.setbacks = envelopeSetbacks(site, rules, { floors: opts.floors ?? 2, buildingType: opts.buildingType });
+  return site;
 }
 
 export function landAreaSqWa(land: Land): { sqwa: number; fromShape: number } {

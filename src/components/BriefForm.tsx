@@ -22,6 +22,7 @@ export interface BriefFormValues {
     roads: Road[];
     province: string;
     district: string;
+    zone: string;
   };
   requirements: {
     buildingType: string;
@@ -41,7 +42,7 @@ export interface BriefFormValues {
 export const EMPTY_BRIEF: BriefFormValues = {
   title: "",
   customer: { name: "", phone: "", email: "", note: "" },
-  land: { shape: "rect", widthM: "", depthM: "", cornersText: "", areaSqWa: "", frontFacing: "N", roads: [{ side: "front", widthM: "6" }], province: "กรุงเทพมหานคร", district: "" },
+  land: { shape: "rect", widthM: "", depthM: "", cornersText: "", areaSqWa: "", frontFacing: "N", roads: [{ side: "front", widthM: "6" }], province: "กรุงเทพมหานคร", district: "", zone: "" },
   requirements: { buildingType: "two_storey", floors: "2", bedrooms: "3", bathrooms: "2", parking: "2", specialRooms: [], targetAreaM2: "", style: "modern" },
   budgetMin: "",
   budgetMax: "",
@@ -69,6 +70,7 @@ function toInput(v: BriefFormValues): BriefInput {
       roads: land.roads.map((r) => ({ side: r.side as never, widthM: r.widthM as unknown as number })),
       province: land.province,
       district: land.district,
+      zone: land.zone.trim() || undefined,
     },
     requirements: v.requirements as unknown as BriefInput["requirements"],
     budgetMin: v.budgetMin as unknown as number,
@@ -179,6 +181,9 @@ export function BriefForm({ initial, projectId }: { initial: BriefFormValues; pr
           </Field>
           <Field label={t("brief.district")}>
             <input className="input" value={v.land.district} onChange={(e) => setLand("district", e.target.value)} />
+          </Field>
+          <Field label={t("brief.zone")} hint={t("brief.zoneHint")}>
+            <input className="input" value={v.land.zone} placeholder="ย.3" onChange={(e) => setLand("zone", e.target.value)} />
           </Field>
         </div>
 

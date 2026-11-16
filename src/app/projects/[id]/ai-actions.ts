@@ -10,6 +10,7 @@ import { buildEditPrompt, buildGeneratePrompt, describeSite, type Variant } from
 import { decompilePlan, type AiOption } from "@/lib/ai/format";
 import { estimatePlan } from "@/lib/pricing/catalog";
 import { nextVersionNumber } from "@/lib/versions";
+import { loadRules } from "@/lib/compliance/server";
 
 export type AiActionResult = { ok: true; versionId: string } | { ok: false; error: string; code?: string };
 
@@ -84,7 +85,8 @@ export async function generateOption(projectId: string, variant: Variant): Promi
   if (!project?.brief) return { ok: false, error: "Project has no brief" };
   const land = LandSchema.parse(project.brief.land);
   const requirements = RequirementsSchema.parse(project.brief.requirements);
-  const site = siteFromLand(land);
+  const { rules } = await loadRules(project.jurisdictionId);
+  const site = siteFromLand(land, rules, { floors: requirements.floors, buildingType: requirements.buildingType });
   const { budgetMin, budgetMax, freeText } = project.brief;
   const prompt = buildGeneratePrompt({ land, requirements, budgetMin, budgetMax, freeText }, site, variant);
 

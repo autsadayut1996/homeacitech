@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: "House Design" };
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const t = await getTranslations("app");
+  const tn = await getTranslations("nav");
   return (
     <html lang={locale} className={thai.variable}>
       <body className="min-h-screen antialiased">
@@ -25,6 +26,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <nav className="flex gap-4 text-sm">
                 <Link href="/" className="hover:text-accent">
                   {t("projects")}
+                </Link>
+                <Link href="/settings/rules" className="hover:text-accent">
+                  {tn("rules")}
                 </Link>
               </nav>
               <div className="ml-auto flex items-center gap-3">

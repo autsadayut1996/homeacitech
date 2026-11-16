@@ -3,10 +3,10 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import { sampleTwoStoreyPlan } from "../src/lib/plan-core/samples";
 import { computeMetrics } from "../src/lib/plan-core/metrics";
 import { estimate, type CatalogMaterial } from "../src/lib/pricing/materials";
+import { BANGKOK_RULES, NATIONAL_RULES } from "../src/lib/compliance/defaults";
 
 const db = new PrismaClient();
 
-const UNVERIFIED = "ค่าเริ่มต้นเพื่อการตรวจเบื้องต้น — ต้องให้สถาปนิกผู้มีใบอนุญาตยืนยันก่อนใช้งานจริง";
 
 async function main() {
   await db.quotation.deleteMany();
@@ -30,41 +30,18 @@ async function main() {
     update: {},
   });
 
-  // ---- Regulations (data — the evaluator comes in M7) ----
-  const bkk = await db.jurisdiction.create({ data: { code: "TH-BKK", nameTh: "กรุงเทพมหานคร", nameEn: "Bangkok" } });
-  await db.jurisdiction.create({ data: { code: "TH-DEFAULT", nameTh: "ต่างจังหวัด (ค่าเริ่มต้นตามกฎกระทรวง)", nameEn: "Other provinces (ministerial-regulation defaults)" } });
-  await db.ruleSet.create({
+  // ---- Regulations (data; evaluated by src/lib/compliance/rules.ts). All ship UNVERIFIED. ----
+  const ruleRows = (rules: typeof NATIONAL_RULES) =>
+    rules.map((r) => ({ code: r.code, type: r.type, titleTh: r.titleTh, titleEn: r.titleEn, params: r.params as Prisma.InputJsonValue, sourceRef: r.sourceRef, verified: false }));
+  const bkk = await db.jurisdiction.create({
+    data: { code: "TH-BKK", nameTh: "กรุงเทพมหานคร", nameEn: "Bangkok", ruleSets: { create: { version: 1, rules: { create: ruleRows(BANGKOK_RULES) } } } },
+  });
+  await db.jurisdiction.create({
     data: {
-      jurisdiction: { connect: { id: bkk.id } },
-      version: 1,
-      rules: {
-        create: [
-          {
-            code: "OPENING_BOUNDARY",
-            type: "opening_to_boundary",
-            titleTh: "ระยะช่องเปิด (หน้าต่าง ประตู ช่องระบายอากาศ ระเบียง) ห่างแนวเขตที่ดิน",
-            titleEn: "Openings (windows, doors, vents, balconies) distance from plot boundary",
-            params: { underHeightM: 9, minDistanceUnderM: 2, minDistanceOverM: 3, blankWallMinM: 0.5 },
-            sourceRef: "กฎกระทรวงฉบับที่ 55 (พ.ศ. 2543) ออกตามความใน พ.ร.บ.ควบคุมอาคาร พ.ศ. 2522 — ข้อ 50. " + UNVERIFIED,
-          },
-          {
-            code: "ROAD_CENTERLINE_LT6",
-            type: "setback_road",
-            titleTh: "อาคารติดถนนสาธารณะกว้างน้อยกว่า 6 ม. ต้องร่นจากกึ่งกลางถนน",
-            titleEn: "Buildings on public roads narrower than 6 m must set back from the road centreline",
-            params: { roadWidthLtM: 6, minFromCenterlineM: 3 },
-            sourceRef: "กฎกระทรวงฉบับที่ 55 (พ.ศ. 2543) — ข้อ 41. " + UNVERIFIED,
-          },
-          {
-            code: "FAR_OSR_ZONE",
-            type: "far_osr",
-            titleTh: "FAR / OSR ตามประเภทการใช้ประโยชน์ที่ดิน (สีผังเมือง)",
-            titleEn: "FAR / OSR by land-use zone (comprehensive plan colour)",
-            params: { byZone: {} },
-            sourceRef: "กฎกระทรวงให้ใช้บังคับผังเมืองรวมกรุงเทพมหานคร — ค่าแตกต่างตามประเภทที่ดิน ต้องกรอกค่าตามผังเมืองฉบับที่บังคับใช้ปัจจุบัน. " + UNVERIFIED,
-          },
-        ],
-      },
+      code: "TH-DEFAULT",
+      nameTh: "ต่างจังหวัด (ค่าเริ่มต้นตามกฎกระทรวง)",
+      nameEn: "Other provinces (ministerial-regulation defaults)",
+      ruleSets: { create: { version: 1, rules: { create: ruleRows(NATIONAL_RULES) } } },
     },
   });
 

@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { db } from "@/lib/db";
-import { LandSchema, PROVISIONAL_SETBACK_M, RequirementsSchema, landAreaSqWa, siteFromLand } from "@/lib/brief";
+import { LandSchema, RequirementsSchema, landAreaSqWa, siteFromLand } from "@/lib/brief";
+import { loadRules } from "@/lib/compliance/server";
+import { evaluateAll, overallStatus, type Mark, type RuleResult } from "@/lib/compliance/rules";
+import { CompliancePanel } from "@/components/CompliancePanel";
 import { PlanSchema, area, buildableArea, formatRaiNganWa, validatePlan } from "@/lib/plan-core";
 import { SitePlanSvg } from "@/components/SitePlanSvg";
 import { PlanSummary } from "@/components/PlanSummary";
@@ -28,12 +31,19 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
 
   const land = project.brief ? LandSchema.safeParse(project.brief.land) : null;
   const req = project.brief ? RequirementsSchema.safeParse(project.brief.requirements) : null;
-  const site = land?.success ? siteFromLand(land.data) : null;
+  const loaded = await loadRules(project.jurisdictionId);
+  const site = land?.success
+    ? siteFromLand(land.data, loaded.rules, req?.success ? { floors: req.data.floors, buildingType: req.data.buildingType } : {})
+    : null;
+  const jurisdictionName = loaded.jurisdiction ? (locale === "th" ? loaded.jurisdiction.nameTh : loaded.jurisdiction.nameEn) : null;
   const buildable = site ? buildableArea(site) : null;
   const options = project.versions.filter((v) => v.isOption);
   const versions = project.versions.filter((v) => !v.isOption && v.number !== null).sort((a, b) => a.number! - b.number!);
   const current = versions.find((v) => v.id === selected) ?? versions[versions.length - 1];
   const currentPlan = current ? PlanSchema.safeParse(current.plan) : null;
+  const compliance: RuleResult[] | null = currentPlan?.success
+    ? evaluateAll(loaded.rules, { plan: currentPlan.data, buildingType: req?.success ? req.data.buildingType : undefined, zone: land?.success ? land.data.zone : null })
+    : null;
   const baht = (n: number | null | undefined) => (n ? f.number(n, { style: "currency", currency: "THB", maximumFractionDigits: 0 }) : "—");
 
   return (
@@ -74,7 +84,8 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
                 />
                 <Row k={t("brief.province")} v={[land.data.district, land.data.province].filter(Boolean).join(", ")} />
                 <Row k={t("project.buildable")} v={`${f.number(area(buildable.polygon), { maximumFractionDigits: 1 })} ${t("units.sqm")}`} />
-                <p className="rounded bg-amber-50 p-2 text-xs text-warn">⚠️ {t("project.provisionalSetback", { m: PROVISIONAL_SETBACK_M })}</p>
+                {land.data.zone && <Row k={t("brief.zone")} v={land.data.zone} />}
+                <p className="rounded bg-amber-50 p-2 text-xs text-warn">⚠️ {t("project.envelopeNote", { j: jurisdictionName ?? "—" })}</p>
                 {buildable.approximate && <p className="text-xs text-warn">⚠️ {t("project.approxSetback")}</p>}
               </div>
             </div>
@@ -168,9 +179,23 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
                 </p>
               )}
             </div>
-            <PlanViews plan={currentPlan.data} locale={locale} />
+            <PlanViews plan={currentPlan.data} locale={locale} marks={compliance?.flatMap((r) => r.marks) ?? []} />
             <EditDesignBox versionId={current.id} projectId={project.id} />
             <PlanSummary plan={currentPlan.data} result={validatePlan(currentPlan.data)} />
+            {compliance && (
+              <CompliancePanel
+                results={compliance}
+                locale={locale}
+                jurisdiction={jurisdictionName}
+                labels={{
+                  title: t("compliance.title"),
+                  disclaimer: t("compliance.disclaimer"),
+                  unverified: t("compliance.unverified"),
+                  source: t("compliance.source"),
+                  summary: t(`compliance.overall_${overallStatus(compliance)}`),
+                }}
+              />
+            )}
             {current.totalPrice && <p className="text-xs text-muted">* {t("ai.roughNote")}</p>}
           </div>
         )}
@@ -179,7 +204,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   );
 }
 
-function PlanViews({ plan, locale }: { plan: import("@/lib/plan-core").Plan; locale: "th" | "en" }) {
+function PlanViews({ plan, locale, marks = [] }: { plan: import("@/lib/plan-core").Plan; locale: "th" | "en"; marks?: Mark[] }) {
   const result = validatePlan(plan);
   const bad = result.errors.flatMap((e) => e.roomIds ?? []);
   return (
@@ -189,7 +214,7 @@ function PlanViews({ plan, locale }: { plan: import("@/lib/plan-core").Plan; loc
           <figcaption className="mb-2 text-sm font-medium">
             {l.name[locale]} <span className="text-muted">({l.rooms.length} {locale === "th" ? "ห้อง" : "rooms"})</span>
           </figcaption>
-          <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale={locale} highlight={bad} className="w-full" />
+          <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale={locale} highlight={bad} marks={marks} className="w-full" />
         </figure>
       ))}
     </div>

@@ -69,6 +69,15 @@ npm test                      # unit tests (plan-core)
 - Spec packages (Standard/Premium/Luxury) and per-slot materials; colours update the 3D instantly and the price change (+/−) is shown per option and vs the saved version.
 - Materials live in the `Material` table (sample prices seeded). Pricing = base rate × area + Σ quantity × (material − standard default) — `src/lib/pricing/materials.ts`; quantities from `takeoff()` in plan-core, which the BOQ (M6) will reuse.
 
+## Building-regulation checks (M7)
+Preliminary only — every screen says it must be certified by a licensed architect/engineer.
+- Rules are data per area (`Jurisdiction` → `RuleSet` → `Rule`), edited at `/settings/rules`; each rule type has a typed parameter schema and an evaluator in `src/lib/compliance/rules.ts` (unit-tested).
+- Rule types: opening/balcony distance to boundary (2 m / 3 m by height, blank walls 0.5 m or on the line with consent, road side = warning), road-centreline setback for roads < 6 m, 1/10-road-width setback for commercial types, height vs road width, high-rise threshold, FAR/OSR by land-use zone, minimum parking.
+- Defaults (`src/lib/compliance/defaults.ts`) cite the Ministerial Regulation articles they come from and ship **unverified**; Bangkok FAR/OSR zone values are intentionally empty until entered from the comprehensive plan in force.
+- The buildable envelope (red dashed line) is now computed from the rules instead of a fixed 2 m.
+- Results show ✅/⚠️/❌ with explanations and source; violations are drawn on the plan, live in the 2D editor.
+- Projects pick the area whose Thai name matches the province, else Bangkok rules for Bangkok, else national defaults.
+
 ## Milestones
 - [x] M1 Project skeleton, TH/EN, optional password gate (single user — no accounts)
 - [x] M2 Design brief form + plan data model, geometry, validator, metrics
@@ -76,6 +85,6 @@ npm test                      # unit tests (plan-core)
 - [x] M4 2D editor
 - [x] M5 3D viewer + materials
 - [ ] M6 Excel price import + BOQ
-- [ ] M7 Building-regulation rules engine (Bangkok first)
+- [x] M7 Building-regulation rules engine (Bangkok first)
 - [ ] M8 Versions + approvals
 - [ ] M9 Quotation / contract PDF

@@ -43,6 +43,8 @@ import {
 import { historyReducer, initHistory } from "@/lib/editor/history";
 import { estimate, type CatalogMaterial } from "@/lib/pricing/materials";
 import { savePlanVersion } from "@/app/projects/[id]/edit/actions";
+import { evaluateAll, overallStatus, type ComplianceContext, type RuleData } from "@/lib/compliance/rules";
+import { CompliancePanel } from "@/components/CompliancePanel";
 
 type Tool = "select" | "room" | Opening["kind"];
 type Selection = { kind: "room"; id: string } | { kind: "opening"; id: string } | null;
@@ -67,15 +69,22 @@ export function PlanEditor({
   baseVersion,
   initialPlan,
   catalog,
+  rules,
+  complianceContext,
+  jurisdiction,
   locale,
 }: {
   projectId: string;
   baseVersion: { id: string; number: number | null };
   initialPlan: Plan;
   catalog: CatalogMaterial[];
+  rules: RuleData[];
+  complianceContext: Omit<ComplianceContext, "plan">;
+  jurisdiction: string | null;
   locale: "th" | "en";
 }) {
   const t = useTranslations("editor");
+  const tc = useTranslations("compliance");
   const tu = useTranslations("units");
   const router = useRouter();
   const [hist, dispatch] = useReducer(historyReducer<Plan>, initialPlan, initHistory);
@@ -131,6 +140,7 @@ export function PlanEditor({
   const validation = useMemo(() => validatePlan(plan), [plan]);
   const metrics = useMemo(() => computeMetrics(plan), [plan]);
   const total = useMemo(() => estimate(plan, catalog).total, [plan, catalog]);
+  const compliance = useMemo(() => evaluateAll(rules, { plan, ...complianceContext }), [plan, rules, complianceContext]);
   const walls = useMemo(() => deriveWalls(plan, level), [plan, level]);
   const chains = useMemo(() => chainDimensions(plan, levelIndex), [plan, levelIndex]);
   const errorRooms = new Set(validation.errors.filter((e) => !e.levelId || e.levelId === level.id).flatMap((e) => e.roomIds ?? []));
@@ -510,6 +520,14 @@ export function PlanEditor({
               );
             })}
 
+          {/* regulation problems */}
+          {compliance
+            .flatMap((r) => r.marks)
+            .filter((m) => !m.levelId || m.levelId === level.id)
+            .map((m, i) => (
+              <line key={`cm-${i}`} x1={m.a[0]} y1={-m.a[1]} x2={m.b[0]} y2={-m.b[1]} stroke={m.status === "fail" ? "var(--bad)" : "var(--warn)"} strokeWidth={Math.max(0.3, sw * 8)} strokeOpacity={0.7} strokeLinecap="round" className="pointer-events-none" />
+            ))}
+
           {/* room being drawn */}
           {drag?.kind === "draw" && (
             <polygon
@@ -593,6 +611,15 @@ export function PlanEditor({
               );
             })}
           </ul>
+        </div>
+        <div className="card p-4">
+          <CompliancePanel
+            compact
+            results={compliance}
+            locale={locale}
+            jurisdiction={jurisdiction}
+            labels={{ title: tc("title"), disclaimer: tc("disclaimer"), unverified: tc("unverified"), source: tc("source"), summary: tc(`overall_${overallStatus(compliance)}`) }}
+          />
         </div>
         <p className="text-xs text-muted">{t("help")}</p>
       </aside>

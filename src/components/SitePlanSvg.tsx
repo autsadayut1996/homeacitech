@@ -24,12 +24,14 @@ interface Props {
   locale: "th" | "en";
   /** Room ids to highlight (e.g. those with validation errors). */
   highlight?: string[];
+  /** Regulation problems to draw (site coordinates). */
+  marks?: { a: Point; b: Point; status: "pass" | "warn" | "fail"; levelId?: string }[];
   className?: string;
 }
 
 const PAD = 1.5;
 
-export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], className }: Props) {
+export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], marks = [], className }: Props) {
   const ccw = signedArea(site.boundary) >= 0;
   const roadPolys = site.roads.map((r) => {
     const e = edges(site.boundary)[r.edgeIndex];
@@ -125,6 +127,22 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
           })}
         </g>
       )}
+
+      {marks
+        .filter((m) => !m.levelId || !level || m.levelId === level.id)
+        .map((m, i) => (
+          <line
+            key={`mark-${i}`}
+            x1={X(m.a)}
+            y1={Y(m.a)}
+            x2={X(m.b)}
+            y2={Y(m.b)}
+            stroke={m.status === "fail" ? "var(--bad)" : "var(--warn)"}
+            strokeWidth={0.35}
+            strokeOpacity={0.75}
+            strokeLinecap="round"
+          />
+        ))}
 
       <g transform={`translate(${arrowC[0]} ${arrowC[1]})`}>
         <circle r={0.6} fill="var(--paper)" stroke="var(--muted)" strokeWidth={0.04} />

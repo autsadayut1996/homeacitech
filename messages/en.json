@@ -79,7 +79,9 @@
     "err_width_depth_required": "Enter frontage and depth",
     "err_corners_required": "Enter at least 3 points",
     "err_budget_range": "Max budget must be at least the min",
-    "err_invalid": "Invalid value"
+    "err_invalid": "Invalid value",
+    "zone": "Land-use zone (plan colour)",
+    "zoneHint": "e.g. ย.3 — used for FAR/OSR"
   },
   "buildingType": {
     "single_storey": "Single-storey house",
@@ -129,7 +131,6 @@
     "landArea": "Plot area",
     "deedArea": "per title deed",
     "buildable": "Buildable area after setbacks",
-    "provisionalSetback": "Using a provisional {m} m setback on every side — legal setbacks come with the compliance milestone",
     "approxSetback": "Irregular plot — buildable area is approximate",
     "roads": "Roads",
     "requirements": "Requirements",
@@ -143,7 +144,8 @@
     "noDesigns": "No designs yet — ask the AI above",
     "version": "Version {n}",
     "sitePlan": "Site plan",
-    "north": "N"
+    "north": "N",
+    "envelopeNote": "Red dashed line = buildable area under {j} rules (assuming windows on every side) — preliminary check"
   },
   "plan": {
     "metrics": "Area summary",
@@ -272,5 +274,48 @@
     "unit_unit": "door",
     "unit_set": "set",
     "inUse": "In use"
+  },
+  "compliance": {
+    "title": "Preliminary building-regulation check",
+    "disclaimer": "Preliminary check only — must be certified by a licensed architect/engineer before a permit application",
+    "unverified": "unverified values",
+    "source": "Source",
+    "overall_pass": "✅ All passed",
+    "overall_warn": "⚠️ Items to review",
+    "overall_fail": "❌ Items failing",
+    "short": "Regulations"
+  },
+  "nav": {
+    "rules": "Regulation settings"
+  },
+  "rulesAdmin": {
+    "title": "Building regulations by area",
+    "intro": "All values are defaults for preliminary checks. A licensed architect must review the values and sources, then tick \"verified\" with their name.",
+    "setInfo": "rule set v{v} · {n} rules · {u} unverified",
+    "verifiedBadge": "Verified",
+    "unverifiedBadge": "Unverified",
+    "titleTh": "Title (Thai)",
+    "titleEn": "Title (English)",
+    "params": "Parameters (JSON)",
+    "source": "Source / legal reference",
+    "verifiedLabel": "Values verified by a licensed architect",
+    "verifiedBy": "Verifier name + licence no.",
+    "verifiedAt": "Verified by {by} on {at}",
+    "save": "Save",
+    "saved": "Saved",
+    "help_opening_to_boundary": "heightThresholdM: height that switches the requirement · minUnderM / minOverM: opening distance (m) · blankWallMinM · roadSide: fail | warn | skip",
+    "help_setback_road_centerline": "roadWidthBelowM: applies to roads narrower than this · minFromCenterlineM",
+    "help_setback_road_fraction": "appliesTo: building types · fraction of road width · roadWidthMinM/MaxM · overMaxDistanceM",
+    "help_height_vs_road": "factor: height ≤ factor × distance to the far side of the road",
+    "help_max_height": "maxM · severity: fail | warn",
+    "help_far_osr": "zones: { \"ย.3\": { \"far\": 2.5, \"osrPercent\": 20 } } — from the comprehensive plan in force (null = not checked)",
+    "help_parking_min": "appliesTo · minFloorAreaM2 · m2PerSpace",
+    "newArea": "Add an area (province / municipality)",
+    "newAreaHint": "Projects whose province matches the Thai name use this rule set. Rules are copied from the template area, then adjusted for local ordinances.",
+    "nameTh": "Thai name (= province)",
+    "nameEn": "English name",
+    "copyFrom": "Copy rules from {name}",
+    "create": "Create",
+    "created": "Created"
   }
 }

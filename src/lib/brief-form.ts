@@ -22,6 +22,7 @@ export function briefToForm(project: Project & { customer: Customer; brief: Brie
       roads: (land.roads ?? EMPTY_BRIEF.land.roads).map((r) => ({ side: r.side, widthM: s(r.widthM) })),
       province: land.province ?? "",
       district: s(land.district),
+      zone: s(land.zone),
     },
     requirements: {
       buildingType: req.buildingType ?? EMPTY_BRIEF.requirements.buildingType,
