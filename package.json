@@ -15,6 +15,7 @@
     "vercel-build": "prisma generate && prisma migrate deploy && next build"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@prisma/client": "^6.19.3",
     "next": "15.5.29",
     "next-intl": "^4.15.1",

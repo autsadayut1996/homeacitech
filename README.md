@@ -43,10 +43,20 @@ npm test                      # unit tests (plan-core)
 3. Set the build command to `npm run vercel-build` (runs `prisma migrate deploy` then `next build`).
 4. Seed once from your machine: `DATABASE_URL=<direct url> npm run db:seed`.
 
+## AI floor plans (M3)
+- Model: `claude-opus-5-5` (adaptive thinking, effort `high`), structured JSON output, server-side refusal fallback (`fallbacks: "default"`).
+- The AI returns room rectangles + which rooms connect + which sides get windows (`src/lib/ai/format.ts`);
+  code places doors/windows on the real shared/exterior walls, then `validatePlan` checks it.
+  Errors are sent back to the AI for up to 4 attempts; the best attempt is kept even if it still has errors.
+- 3 options (cost-efficient / balanced / spacious) are generated in parallel, one server action each
+  (`maxDuration = 300` s on Vercel). Every call is logged in `AiGeneration` with token usage.
+- Prices shown with options are a rough per-m² placeholder (`src/lib/pricing/rough.ts`) until the BOQ (M6).
+- Requires `ANTHROPIC_API_KEY`.
+
 ## Milestones
 - [x] M1 Project skeleton, TH/EN, optional password gate (single user — no accounts)
 - [x] M2 Design brief form + plan data model, geometry, validator, metrics
-- [ ] M3 AI floor-plan generation (Claude API) + validator retry loop
+- [x] M3 AI floor-plan generation (Claude API) + validator retry loop + natural-language edits
 - [ ] M4 2D editor
 - [ ] M5 3D viewer + materials
 - [ ] M6 Excel price import + BOQ

@@ -80,8 +80,11 @@ model DesignVersion {
   id                 String            @id @default(cuid())
   projectId          String
   project            Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  number             Int
+  /// null while this is an unchosen AI option; assigned (1, 2, 3…) when chosen or saved.
+  number             Int?
   label              String?
+  /// AI option summary: title/concept/pros/cons (th+en), variant, source instruction.
+  aiSummary          Json?
   /// Plan JSON — single source of truth (src/lib/plan-core/schema.ts).
   plan               Json
   /// Snapshot of computed metrics/BOQ at save time, for before/after comparison.
@@ -92,6 +95,7 @@ model DesignVersion {
   ruleSet            RuleSet?          @relation(fields: [ruleSetId], references: [id])
   totalPrice         Decimal?          @db.Decimal(14, 2)
   isOption           Boolean           @default(false) // AI alternative not yet chosen
+  parentId           String?           // version this one was derived from (edits)
   generations        AiGeneration[]
   comments           ReviewComment[]
   quotations         Quotation[]

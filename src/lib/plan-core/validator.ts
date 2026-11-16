@@ -36,7 +36,11 @@ export type IssueCode =
   | "stair_misaligned"
   | "no_daylight"
   | "bedroom_west"
-  | "wet_not_stacked";
+  | "wet_not_stacked"
+  // raised while compiling AI output into a plan
+  | "unknown_room_ref"
+  | "door_no_shared_wall"
+  | "window_no_exterior";
 
 export interface Issue {
   code: IssueCode;
@@ -56,7 +60,7 @@ export interface ValidationResult {
 const PROBE = 0.05; // metres, distance used to look across a wall
 
 /** Look at the room (if any) on the other side of a room edge at a given offset. */
-function roomAcross(level: Level, room: Room, edgeIndex: number, offset: number): Room | null {
+export function roomAcross(level: Level, room: Room, edgeIndex: number, offset: number): Room | null {
   const ccw = signedArea(room.polygon) >= 0;
   const e = edges(room.polygon)[edgeIndex];
   const n = outwardNormal(e);

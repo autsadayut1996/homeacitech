@@ -51,6 +51,18 @@ const T: Record<IssueCode, Record<Locale, Template>> = {
     th: () => "ห้องน้ำ/ครัวชั้นบนไม่ได้อยู่เหนือห้องน้ำ/ครัวชั้นล่าง — งานท่อจะยาวขึ้น",
     en: () => "Upper wet room is not above a wet room below — longer plumbing runs",
   },
+  unknown_room_ref: { th: (p) => `อ้างถึงห้องที่ไม่มีอยู่: ${p.ref}`, en: (p) => `Refers to a room that does not exist: ${p.ref}` },
+  door_no_shared_wall: {
+    th: (p) => (p.other === "EXTERIOR" ? "ไม่มีผนังภายนอกให้ใส่ประตู" : "สองห้องนี้ไม่มีผนังติดกันพอจะใส่ประตู"),
+    en: (p) =>
+      p.other === "EXTERIOR"
+        ? "No exterior wall long enough for this door"
+        : "These rooms do not share a wall long enough for a door (they must touch along an edge)",
+  },
+  window_no_exterior: {
+    th: (p) => `ด้าน ${p.side} ของห้องไม่ติดภายนอก ใส่หน้าต่างไม่ได้`,
+    en: (p) => `The ${p.side} side of this room is not an exterior wall, so no window was placed`,
+  },
 };
 
 export function describeIssue(issue: Issue, locale: Locale): string {

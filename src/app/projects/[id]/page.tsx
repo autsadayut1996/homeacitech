@@ -6,14 +6,20 @@ import { LandSchema, PROVISIONAL_SETBACK_M, RequirementsSchema, landAreaSqWa, si
 import { PlanSchema, area, buildableArea, formatRaiNganWa, validatePlan } from "@/lib/plan-core";
 import { SitePlanSvg } from "@/components/SitePlanSvg";
 import { PlanSummary } from "@/components/PlanSummary";
+import { AiDesignPanel } from "@/components/AiDesignPanel";
+import { EditDesignBox } from "@/components/EditDesignBox";
+import { OptionCard } from "@/components/OptionCard";
 
 export const dynamic = "force-dynamic";
+// AI generation runs as server actions on this page; allow long model calls on Vercel.
+export const maxDuration = 300;
 
-export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ v?: string }> }) {
   const { id } = await params;
+  const { v: selected } = await searchParams;
   const project = await db.project.findUnique({
     where: { id },
-    include: { customer: true, brief: true, versions: { orderBy: { number: "desc" } } },
+    include: { customer: true, brief: true, versions: { orderBy: [{ number: "desc" }, { createdAt: "desc" }] } },
   });
   if (!project) notFound();
   const t = await getTranslations();
@@ -24,8 +30,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const req = project.brief ? RequirementsSchema.safeParse(project.brief.requirements) : null;
   const site = land?.success ? siteFromLand(land.data) : null;
   const buildable = site ? buildableArea(site) : null;
-  const latest = project.versions[0];
-  const latestPlan = latest ? PlanSchema.safeParse(latest.plan) : null;
+  const options = project.versions.filter((v) => v.isOption);
+  const versions = project.versions.filter((v) => !v.isOption && v.number !== null).sort((a, b) => a.number! - b.number!);
+  const current = versions.find((v) => v.id === selected) ?? versions[versions.length - 1];
+  const currentPlan = current ? PlanSchema.safeParse(current.plan) : null;
   const baht = (n: number | null | undefined) => (n ? f.number(n, { style: "currency", currency: "THB", maximumFractionDigits: 0 }) : "—");
 
   return (
@@ -111,16 +119,54 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">{t("project.designs")}</h2>
-        {!latest && <div className="card text-sm text-muted">{t("project.noDesigns")}</div>}
-        {latest && latestPlan?.success && (
-          <>
-            <p className="text-sm text-muted">
-              {t("project.version", { n: latest.number })}
-              {latest.label && ` — ${latest.label}`}
-            </p>
-            <PlanViews plan={latestPlan.data} locale={locale} />
-            <PlanSummary plan={latestPlan.data} result={validatePlan(latestPlan.data)} />
-          </>
+        {project.brief && <AiDesignPanel projectId={project.id} hasOptions={options.length > 0} />}
+
+        {options.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold">{t("ai.options")}</h3>
+            <div className="grid gap-4 xl:grid-cols-3">
+              {options.map((o) => (
+                <OptionCard key={o.id} version={o} locale={locale} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {versions.length === 0 && options.length === 0 && <div className="card text-sm text-muted">{t("project.noDesigns")}</div>}
+
+        {current && currentPlan?.success && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted">{t("ai.versions")}:</span>
+              {versions.map((v) => (
+                <Link
+                  key={v.id}
+                  href={`/projects/${project.id}?v=${v.id}`}
+                  className={`rounded-full px-3 py-1 ring-1 ${v.id === current.id ? "bg-accent text-white ring-accent" : "bg-paper ring-line hover:bg-bg"}`}
+                  title={v.label ?? undefined}
+                >
+                  v{v.number}
+                </Link>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="font-medium">
+                {t("project.version", { n: current.number ?? 0 })}
+                {current.label && <span className="font-normal text-muted"> — {current.label}</span>}
+              </p>
+              {current.totalPrice && (
+                <p className="text-sm" title={t("ai.roughNote")}>
+                  <span className="text-muted">{t("ai.roughPrice")}: </span>
+                  <span className="font-semibold">{baht(Number(current.totalPrice))}</span>
+                  <span className="text-muted"> *</span>
+                </p>
+              )}
+            </div>
+            <PlanViews plan={currentPlan.data} locale={locale} />
+            <EditDesignBox versionId={current.id} projectId={project.id} />
+            <PlanSummary plan={currentPlan.data} result={validatePlan(currentPlan.data)} />
+            {current.totalPrice && <p className="text-xs text-muted">* {t("ai.roughNote")}</p>}
+          </div>
         )}
       </section>
     </div>
