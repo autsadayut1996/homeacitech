@@ -9,6 +9,7 @@ import { AiError, MODEL, anthropicCaller, runDesignLoop, type DesignResult } fro
 import { buildEditPrompt, buildGeneratePrompt, describeSite, type Variant } from "@/lib/ai/prompt";
 import { decompilePlan, type AiOption } from "@/lib/ai/format";
 import { roughPrice } from "@/lib/pricing/rough";
+import { nextVersionNumber } from "@/lib/versions";
 
 export type AiActionResult = { ok: true; versionId: string } | { ok: false; error: string; code?: string };
 
@@ -112,16 +113,11 @@ export async function generateOption(projectId: string, variant: Variant): Promi
   return { ok: true, versionId: version.id };
 }
 
-async function nextNumber(projectId: string) {
-  const last = await db.designVersion.findFirst({ where: { projectId, number: { not: null } }, orderBy: { number: "desc" } });
-  return (last?.number ?? 0) + 1;
-}
-
 /** Keep an AI option: it becomes the next numbered version. */
 export async function chooseOption(versionId: string): Promise<AiActionResult> {
   const v = await db.designVersion.findUniqueOrThrow({ where: { id: versionId } });
   if (!v.isOption) return { ok: true, versionId };
-  await db.designVersion.update({ where: { id: versionId }, data: { isOption: false, number: await nextNumber(v.projectId) } });
+  await db.designVersion.update({ where: { id: versionId }, data: { isOption: false, number: await nextVersionNumber(v.projectId) } });
   revalidatePath(`/projects/${v.projectId}`);
   return { ok: true, versionId };
 }
@@ -165,7 +161,7 @@ export async function editDesign(versionId: string, instruction: string): Promis
   const version = await db.designVersion.create({
     data: {
       projectId: source.projectId,
-      number: await nextNumber(source.projectId),
+      number: await nextVersionNumber(source.projectId),
       parentId: source.id,
       label: text.slice(0, 80),
       plan: json(result.plan),

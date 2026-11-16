@@ -53,11 +53,20 @@ npm test                      # unit tests (plan-core)
 - Prices shown with options are a rough per-m² placeholder (`src/lib/pricing/rough.ts`) until the BOQ (M6).
 - Requires `ANTHROPIC_API_KEY`.
 
+## 2D editor (M4)
+`/projects/:id/edit?v=<versionId>` — SVG editor over the same Plan JSON.
+- Move rooms, drag walls (neighbouring rooms follow; Alt = this room only), draw rooms, add/slide/resize doors, windows, sliding doors and open passages.
+- Grid snap (0.1/0.25/0.5 m) + magnetic snap to other rooms' walls and the floor below; linked stairs move together on all floors.
+- Doors/windows keep their real-world position when a wall moves; they shrink if a wall gets too short.
+- Chain dimensions, live plan check (click an issue to jump to the room), undo/redo, keyboard shortcuts.
+- Saving always creates a new version; the source version is never overwritten.
+- Editing logic is pure and unit-tested in `src/lib/editor/` (`ops.ts`, `history.ts`).
+
 ## Milestones
 - [x] M1 Project skeleton, TH/EN, optional password gate (single user — no accounts)
 - [x] M2 Design brief form + plan data model, geometry, validator, metrics
 - [x] M3 AI floor-plan generation (Claude API) + validator retry loop + natural-language edits
-- [ ] M4 2D editor
+- [x] M4 2D editor
 - [ ] M5 3D viewer + materials
 - [ ] M6 Excel price import + BOQ
 - [ ] M7 Building-regulation rules engine (Bangkok first)
