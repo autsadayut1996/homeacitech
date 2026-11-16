@@ -1,103 +1,59 @@
-import Image from "next/image";
+import Link from "next/link";
+import { getFormatter, getTranslations } from "next-intl/server";
+import { db } from "@/lib/db";
+import { LandSchema, landAreaSqWa } from "@/lib/brief";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const t = await getTranslations();
+  const f = await getFormatter();
+  const projects = await db.project.findMany({ include: { customer: true, brief: true }, orderBy: { updatedAt: "desc" } });
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">{t("app.projects")}</h1>
+      {projects.length === 0 ? (
+        <div className="card text-muted">{t("list.empty")}</div>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-line bg-paper">
+          <table className="w-full text-sm">
+            <thead className="bg-bg text-left text-muted">
+              <tr>
+                <th className="px-4 py-2">{t("list.code")}</th>
+                <th className="px-4 py-2">{t("list.title")}</th>
+                <th className="px-4 py-2">{t("list.customer")}</th>
+                <th className="px-4 py-2">{t("list.land")}</th>
+                <th className="px-4 py-2">{t("list.status")}</th>
+                <th className="px-4 py-2">{t("list.updated")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projects.map((p) => {
+                const land = p.brief ? LandSchema.safeParse(p.brief.land) : null;
+                return (
+                  <tr key={p.id} className="border-t border-line hover:bg-bg">
+                    <td className="px-4 py-2 font-mono text-xs">{p.code}</td>
+                    <td className="px-4 py-2">
+                      <Link href={`/projects/${p.id}`} className="font-medium text-accent hover:underline">
+                        {p.title}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2">{p.customer.name}</td>
+                    <td className="px-4 py-2">
+                      {land?.success ? `${f.number(landAreaSqWa(land.data).sqwa, { maximumFractionDigits: 1 })} ${t("units.sqwa")} · ${land.data.province}` : "—"}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className="rounded-full bg-bg px-2 py-0.5 text-xs">{t(`status.${p.status}`)}</span>
+                    </td>
+                    <td className="px-4 py-2 text-muted">{f.dateTime(p.updatedAt, { dateStyle: "medium", timeStyle: "short" })}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
     </div>
   );
 }

@@ -1,0 +1,245 @@
+// Single-user setup (no login). Approvals record the reviewer's name and licence number
+// as typed in, so the "architect/engineer must sign off" rule is still enforced.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ProjectStatus {
+  DRAFT              // ร่าง
+  PROPOSED           // เสนอลูกค้า
+  PRICE_APPROVAL     // รออนุมัติราคา
+  DESIGN_REVIEW      // รอตรวจแบบ
+  APPROVED           // อนุมัติแล้ว
+  CONTRACT_SIGNED    // เซ็นสัญญา
+  PERMIT_PREP        // เตรียมยื่นขออนุญาต
+}
+
+enum ApprovalType {
+  PRICE
+  ARCHITECTURE
+  ENGINEERING
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  note      String?
+  projects  Project[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Project {
+  id             String          @id @default(cuid())
+  code           String          @unique // e.g. P-2026-0001
+  title          String
+  status         ProjectStatus   @default(DRAFT)
+  customerId     String
+  customer       Customer        @relation(fields: [customerId], references: [id])
+  jurisdictionId String?
+  jurisdiction   Jurisdiction?   @relation(fields: [jurisdictionId], references: [id])
+  brief          Brief?
+  versions       DesignVersion[]
+  approvals      Approval[]
+  quotations     Quotation[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+/// Customer brief. `land` and `requirements` are validated by zod (src/lib/brief.ts).
+model Brief {
+  id           String   @id @default(cuid())
+  projectId    String   @unique
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  land         Json
+  requirements Json
+  budgetMin    Int?
+  budgetMax    Int?
+  freeText     String?
+  /// Structured requirements the AI extracted from freeText (M3).
+  aiSpec       Json?
+  updatedAt    DateTime @updatedAt
+}
+
+model DesignVersion {
+  id                 String            @id @default(cuid())
+  projectId          String
+  project            Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  number             Int
+  label              String?
+  /// Plan JSON — single source of truth (src/lib/plan-core/schema.ts).
+  plan               Json
+  /// Snapshot of computed metrics/BOQ at save time, for before/after comparison.
+  derived            Json?
+  priceListVersionId String?
+  priceListVersion   PriceListVersion? @relation(fields: [priceListVersionId], references: [id])
+  ruleSetId          String?
+  ruleSet            RuleSet?          @relation(fields: [ruleSetId], references: [id])
+  totalPrice         Decimal?          @db.Decimal(14, 2)
+  isOption           Boolean           @default(false) // AI alternative not yet chosen
+  generations        AiGeneration[]
+  comments           ReviewComment[]
+  quotations         Quotation[]
+  createdAt          DateTime          @default(now())
+
+  @@unique([projectId, number])
+}
+
+model AiGeneration {
+  id           String         @id @default(cuid())
+  versionId    String?
+  version      DesignVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  kind         String         // generate | edit | extract_brief
+  model        String
+  request      Json
+  response     Json?
+  validatorLog Json?
+  attempts     Int            @default(1)
+  inputTokens  Int?
+  outputTokens Int?
+  createdAt    DateTime       @default(now())
+}
+
+model ReviewComment {
+  id         String        @id @default(cuid())
+  versionId  String
+  version    DesignVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  author     String
+  role       ApprovalType?
+  levelId    String?
+  x          Float?
+  y          Float?
+  body       String
+  resolved   Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+}
+
+model Approval {
+  id         String         @id @default(cuid())
+  projectId  String
+  project    Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versionId  String?
+  type       ApprovalType
+  status     ApprovalStatus @default(PENDING)
+  approver   String?
+  /// Required for ARCHITECTURE / ENGINEERING approvals (ใบอนุญาตประกอบวิชาชีพ).
+  licenseNo  String?
+  note       String?
+  decidedAt  DateTime?
+  createdAt  DateTime       @default(now())
+}
+
+model Quotation {
+  id          String        @id @default(cuid())
+  projectId   String
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versionId   String
+  version     DesignVersion @relation(fields: [versionId], references: [id])
+  number      String        @unique
+  discount    Decimal       @default(0) @db.Decimal(14, 2)
+  isDraft     Boolean       @default(true)
+  locale      String        @default("th")
+  pdfUrl      String?
+  validUntil  DateTime?
+  createdAt   DateTime      @default(now())
+}
+
+// ---- Pricing (schema will be refined once the company Excel file is available) ----
+
+model PriceListVersion {
+  id         String          @id @default(cuid())
+  name       String
+  effectiveAt DateTime
+  sourceFile String?
+  isActive   Boolean         @default(false)
+  items      PriceItem[]
+  versions   DesignVersion[]
+  createdAt  DateTime        @default(now())
+}
+
+model PriceItem {
+  id             String           @id @default(cuid())
+  priceListId    String
+  priceList      PriceListVersion @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  code           String
+  nameTh         String
+  nameEn         String?
+  unit           String
+  materialCost   Decimal          @db.Decimal(14, 2)
+  laborCost      Decimal          @db.Decimal(14, 2)
+  category       String
+
+  @@unique([priceListId, code])
+}
+
+// ---- Building regulations (data, not code) ----
+
+model Jurisdiction {
+  id        String    @id @default(cuid())
+  code      String    @unique // e.g. TH-BKK
+  nameTh    String
+  nameEn    String
+  ruleSets  RuleSet[]
+  projects  Project[]
+}
+
+model RuleSet {
+  id             String          @id @default(cuid())
+  jurisdictionId String
+  jurisdiction   Jurisdiction    @relation(fields: [jurisdictionId], references: [id])
+  version        Int
+  isActive       Boolean         @default(true)
+  rules          Rule[]
+  designVersions DesignVersion[]
+  createdAt      DateTime        @default(now())
+
+  @@unique([jurisdictionId, version])
+}
+
+model Rule {
+  id          String    @id @default(cuid())
+  ruleSetId   String
+  ruleSet     RuleSet   @relation(fields: [ruleSetId], references: [id], onDelete: Cascade)
+  code        String
+  type        String    // setback_road | opening_to_boundary | max_height | osr | far | parking
+  titleTh     String
+  titleEn     String
+  params      Json
+  sourceRef   String    // legal reference text
+  /// Must be confirmed by a licensed architect before production use.
+  verified    Boolean   @default(false)
+  verifiedBy  String?
+  verifiedAt  DateTime?
+
+  @@unique([ruleSetId, code])
+}
+
+model CompanySettings {
+  id                 String  @id @default("default")
+  nameTh             String
+  nameEn             String
+  address            String?
+  taxId              String?
+  phone              String?
+  logoUrl            String?
+  overheadPct        Decimal @default(10) @db.Decimal(5, 2)
+  profitPct          Decimal @default(15) @db.Decimal(5, 2)
+  vatPct             Decimal @default(7) @db.Decimal(5, 2)
+  contingencyPct     Decimal @default(5) @db.Decimal(5, 2)
+  quoteValidityDays  Int     @default(30)
+}

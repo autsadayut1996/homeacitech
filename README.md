@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# House Design for Sales — ระบบออกแบบบ้านสำหรับเซลล์
 
-## Getting Started
+Web app ให้เซลล์บริษัทรับสร้างบ้านรับโจทย์ลูกค้า → สร้างแปลนด้วย AI → ปรับแก้ 2D/3D → ประเมินราคา BOQ → ตรวจกฎหมายเบื้องต้น → ออกใบเสนอราคา
 
-First, run the development server:
+> ⚠️ แบบและราคาในระบบเป็น **แบบร่างเพื่อการขาย** ไม่ใช่แบบก่อสร้าง ต้องให้สถาปนิก/วิศวกรผู้มีใบอนุญาตตรวจรับรองก่อนใช้งานจริง
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Stack
+Next.js 15 (App Router) · TypeScript · PostgreSQL + Prisma · next-intl (TH/EN, cookie-based) · Tailwind v4 · Vitest
+
+## Structure
+```
+src/lib/plan-core/   Pure TS — plan JSON schema (single source of truth), geometry,
+                     wall derivation, metrics (area/FAR/OSR), validator, TH/EN messages
+src/lib/brief.ts     Design-brief schema (zod) + land → site conversion
+src/app/             Pages + server actions
+src/components/      BriefForm, SitePlanSvg (site + floor plan renderer), PlanSummary
+prisma/              Schema (full MVP data model) + seed
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Plan JSON conventions
+- Metres, y-up frame; edge 0 of the plot is the front.
+- Rooms are rectilinear polygons on **wall centrelines**; walls are derived, not stored.
+- Doors/windows are anchored to a room edge (`roomId`, `edgeIndex`, `offsetM`) so they move with the room.
+- Stairs are rooms of type `stair`; the same `stairLinkId` on consecutive levels = one stair.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Run locally
+```bash
+cp .env.example .env          # set DATABASE_URL / DIRECT_URL
+npm install
+npx prisma migrate dev        # create tables
+npm run db:seed               # sample customers, projects, a sample 2-storey plan, Bangkok rules
+npm run dev                   # http://localhost:3000
+npm test                      # unit tests (plan-core)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy to Vercel
+1. Create a Postgres database (Vercel Marketplace → **Neon** is simplest).
+2. In the Vercel project set env vars:
+   - `DATABASE_URL` — pooled connection string
+   - `DIRECT_URL` — direct (non-pooled) connection string, used for migrations
+   - `APP_PASSWORD` — **recommended**: the app has no user accounts, so without this anyone with the URL can use it (and your Claude API credits later)
+   - `ANTHROPIC_API_KEY` — from milestone 3
+3. Set the build command to `npm run vercel-build` (runs `prisma migrate deploy` then `next build`).
+4. Seed once from your machine: `DATABASE_URL=<direct url> npm run db:seed`.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Milestones
+- [x] M1 Project skeleton, TH/EN, optional password gate (single user — no accounts)
+- [x] M2 Design brief form + plan data model, geometry, validator, metrics
+- [ ] M3 AI floor-plan generation (Claude API) + validator retry loop
+- [ ] M4 2D editor
+- [ ] M5 3D viewer + materials
+- [ ] M6 Excel price import + BOQ
+- [ ] M7 Building-regulation rules engine (Bangkok first)
+- [ ] M8 Versions + approvals
+- [ ] M9 Quotation / contract PDF
