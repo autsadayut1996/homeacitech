@@ -387,5 +387,9 @@
     "kind_retyped": "เปลี่ยนประเภท",
     "materialChanges": "วัสดุที่เปลี่ยน",
     "packageDefault": "ตามแพ็กเกจ"
+  },
+  "export": {
+    "dxf": "DXF (AutoCAD)",
+    "dxfHint": "ดาวน์โหลดแปลนทุกชั้นเป็นไฟล์ DXF หน่วยมิลลิเมตร แยก layer — เปิดใน AutoCAD ได้"
   }
 }

@@ -210,6 +210,9 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
               <Link href={`/projects/${project.id}/design?v=${current.id}`} className="btn-ghost">
                 🧊 {t("studio.open")}
               </Link>
+              <a href={`/projects/${project.id}/export/dxf?v=${current.id}&lang=${locale}`} className="btn-ghost" download title={t("export.dxfHint")}>
+                ⬇ {t("export.dxf")}
+              </a>
               {current.id !== latest?.id && <RestoreVersionButton projectId={project.id} versionId={current.id} number={current.number ?? 0} locale={locale} />}
               {current.totalPrice && (
                 <p className="text-sm" title={t("ai.roughNote")} data-testid="price">

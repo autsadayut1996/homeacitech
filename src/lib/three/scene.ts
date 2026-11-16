@@ -15,7 +15,7 @@ import {
   centroid,
   deriveWalls,
   edges,
-  openingSegment,
+  layoutWall,
   pointInPolygonStrict,
   ridgeHeight,
   roofParts,
@@ -72,36 +72,6 @@ function box(x0: number, x1: number, y0: number, y1: number, z0: number, z1: num
   return { kind: "box", center: v3((x0 + x1) / 2, (z0 + z1) / 2, -(y0 + y1) / 2), size: v3(sx, sy, sz), mat, level, roof };
 }
 
-interface OpeningSpan {
-  a: number;
-  b: number;
-  kind: "door" | "sliding_door" | "window" | "opening";
-  sill: number;
-  head: number;
-}
-
-/** Openings lying on a wall, as intervals along the wall's own axis. */
-function openingsOnWall(level: Level, w: Wall): OpeningSpan[] {
-  const horizontal = Math.abs(w.a[1] - w.b[1]) < TOL;
-  const fixed = horizontal ? w.a[1] : w.a[0];
-  const [s, e] = horizontal ? [Math.min(w.a[0], w.b[0]), Math.max(w.a[0], w.b[0])] : [Math.min(w.a[1], w.b[1]), Math.max(w.a[1], w.b[1])];
-  const out: OpeningSpan[] = [];
-  for (const o of level.openings) {
-    const seg = openingSegment(level, o);
-    if (!seg) continue;
-    const [p, q] = seg;
-    const onLine = horizontal ? Math.abs(p[1] - fixed) < TOL && Math.abs(q[1] - fixed) < TOL : Math.abs(p[0] - fixed) < TOL && Math.abs(q[0] - fixed) < TOL;
-    if (!onLine) continue;
-    const a = Math.max(s, Math.min(horizontal ? p[0] : p[1], horizontal ? q[0] : q[1]));
-    const b = Math.min(e, Math.max(horizontal ? p[0] : p[1], horizontal ? q[0] : q[1]));
-    if (b - a < 0.05) continue;
-    const sill = o.kind === "window" ? (o.sillM ?? 0.9) : 0;
-    const head = Math.min(level.floorToFloorM - 0.05, sill + (o.heightM ?? (o.kind === "window" ? 1.2 : 2.1)));
-    out.push({ a, b, kind: o.kind, sill, head });
-  }
-  return out.sort((x, y) => x.a - y.a);
-}
-
 /** Build all wall pieces for one wall: solid runs, sills, lintels and opening fills. */
 function wallPrims(plan: Plan, level: Level, li: number, w: Wall): Prim[] {
   const prims: Prim[] = [];
@@ -109,8 +79,6 @@ function wallPrims(plan: Plan, level: Level, li: number, w: Wall): Prim[] {
   const H = level.floorToFloorM;
   const horizontal = Math.abs(w.a[1] - w.b[1]) < TOL;
   const fixed = horizontal ? w.a[1] : w.a[0];
-  const s = horizontal ? Math.min(w.a[0], w.b[0]) : Math.min(w.a[1], w.b[1]);
-  const e = horizontal ? Math.max(w.a[0], w.b[0]) : Math.max(w.a[1], w.b[1]);
   const t = w.thicknessM;
 
   // Layers across the wall thickness: [offset from centreline, thickness, material]
@@ -137,10 +105,9 @@ function wallPrims(plan: Plan, level: Level, li: number, w: Wall): Prim[] {
     }
   };
 
-  const ops = openingsOnWall(level, w);
-  let cursor = s - t / 2;
-  for (const o of ops) {
-    if (o.a > cursor) piece(cursor, o.a, 0, H);
+  const lay = layoutWall(level, w);
+  for (const [a, b] of lay.solids) piece(a, b, 0, H);
+  for (const o of lay.openings) {
     if (o.kind !== "opening" && o.sill > 0) piece(o.a, o.b, 0, o.sill);
     piece(o.a, o.b, o.head, H);
     if (o.kind === "window" || o.kind === "sliding_door") {
@@ -153,9 +120,7 @@ function wallPrims(plan: Plan, level: Level, li: number, w: Wall): Prim[] {
     } else if (o.kind === "door") {
       piece(o.a + 0.03, o.b - 0.03, 0.01, o.head, "door", 0.04);
     }
-    cursor = Math.max(cursor, o.b);
   }
-  if (e + t / 2 > cursor) piece(cursor, e + t / 2, 0, H);
   return prims;
 }
 

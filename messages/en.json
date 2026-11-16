@@ -387,5 +387,9 @@
     "kind_retyped": "type changed",
     "materialChanges": "Material changes",
     "packageDefault": "package default"
+  },
+  "export": {
+    "dxf": "DXF (AutoCAD)",
+    "dxfHint": "Download all floor plans as DXF in millimetres with separate layers — opens in AutoCAD"
   }
 }

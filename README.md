@@ -88,6 +88,14 @@ Preliminary only — every screen says it must be certified by a licensed archit
 - `/projects/:id/compare?a=&b=`: side-by-side plans, metric and price deltas, room and material changes; any old version can be restored (as a new version).
 - No user accounts (single user): approver names and licence numbers are typed in and recorded with the decision.
 
+## DXF export for AutoCAD (phase 2, pulled forward)
+`GET /projects/:id/export/dxf?v=<versionId>&units=mm|m&lang=th|en` — button "⬇ DXF (AutoCAD)" on the project page.
+- AutoCAD R12 ASCII DXF (opens in every AutoCAD version, BricsCAD, LibreCAD…), millimetres by default; floors side by side, each with plot, setbacks and road.
+- Layers: `A-WALL` walls (outlines with gaps at openings), `A-DOOR` doors with swing arcs / sliding panels, `A-GLAZ` windows, `A-STRS` stair treads, `A-AREA` room outlines, `A-OUTD` carport/balcony, `A-ROOF` eave line, `A-TEXT` room names + area, `A-DIMS` chain dimensions, `A-ANNO` titles/north arrow/not-for-construction note, `C-PROP` plot boundary, `C-SETB` setback line, `C-ROAD` road.
+- Thai text is stored in the file's code page (ANSI_874) with a Tahoma text style.
+- Not yet: electrical and sanitary layers (the plan has no MEP data yet), true DIMENSION entities (dimensions are lines + text), title block / sheet layout.
+- Validated with ezdxf (strict load + audit: 0 errors); `src/lib/export/dxf.ts` is unit-tested.
+
 ## Milestones
 - [x] M1 Project skeleton, TH/EN, optional password gate (single user — no accounts)
 - [x] M2 Design brief form + plan data model, geometry, validator, metrics

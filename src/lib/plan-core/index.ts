@@ -8,3 +8,4 @@ export * from "./messages";
 export * from "./roof";
 export * from "./takeoff";
 export * from "./diff";
+export * from "./wallsegments";
