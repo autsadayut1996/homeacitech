@@ -62,12 +62,19 @@ npm test                      # unit tests (plan-core)
 - Saving always creates a new version; the source version is never overwritten.
 - Editing logic is pure and unit-tested in `src/lib/editor/` (`ops.ts`, `history.ts`).
 
+## 3D & materials (M5)
+`/projects/:id/design?v=<versionId>` — React Three Fiber view built from the same Plan JSON (`src/lib/three/scene.ts`, pure and unit-tested).
+- Walls with real openings (sills, lintels, glass, doors), floors, hip/gable/shed/butterfly/flat roofs, slabs over single-storey parts, balcony railings, plot and road.
+- Orbit view, per-floor cutaway (roof hidden), first-person walk mode (click the view, WASD).
+- Spec packages (Standard/Premium/Luxury) and per-slot materials; colours update the 3D instantly and the price change (+/−) is shown per option and vs the saved version.
+- Materials live in the `Material` table (sample prices seeded). Pricing = base rate × area + Σ quantity × (material − standard default) — `src/lib/pricing/materials.ts`; quantities from `takeoff()` in plan-core, which the BOQ (M6) will reuse.
+
 ## Milestones
 - [x] M1 Project skeleton, TH/EN, optional password gate (single user — no accounts)
 - [x] M2 Design brief form + plan data model, geometry, validator, metrics
 - [x] M3 AI floor-plan generation (Claude API) + validator retry loop + natural-language edits
 - [x] M4 2D editor
-- [ ] M5 3D viewer + materials
+- [x] M5 3D viewer + materials
 - [ ] M6 Excel price import + BOQ
 - [ ] M7 Building-regulation rules engine (Bangkok first)
 - [ ] M8 Versions + approvals

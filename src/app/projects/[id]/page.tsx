@@ -157,6 +157,9 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
               <Link href={`/projects/${project.id}/edit?v=${current.id}`} className="btn-ghost">
                 ✏️ {t("editor.open")}
               </Link>
+              <Link href={`/projects/${project.id}/design?v=${current.id}`} className="btn-ghost">
+                🧊 {t("studio.open")}
+              </Link>
               {current.totalPrice && (
                 <p className="text-sm" title={t("ai.roughNote")}>
                   <span className="text-muted">{t("ai.roughPrice")}: </span>

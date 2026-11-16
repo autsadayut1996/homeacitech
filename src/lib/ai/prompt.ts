@@ -1,6 +1,6 @@
 import type { Land, Requirements } from "@/lib/brief";
 import { ROOM_TYPE_INFO, ROOM_TYPES, type Site, bbox, buildableArea, compassBearing, edges, outwardNormal, signedArea } from "@/lib/plan-core";
-import { ROUGH_RATES } from "@/lib/pricing/rough";
+import { BASE_RATE } from "@/lib/pricing/rough";
 import { EXTERIOR, SIDES, type Side } from "./format";
 
 const minTable = ROOM_TYPES.map((t) => {
@@ -113,7 +113,7 @@ export interface BriefForPrompt {
 export function buildGeneratePrompt(brief: BriefForPrompt, site: Site, variant: Variant): string {
   const ctx = describeSite(site);
   const r = brief.requirements;
-  const rate = ROUGH_RATES.standard.indoor;
+  const rate = BASE_RATE.indoor;
   const budgetLine =
     brief.budgetMin || brief.budgetMax
       ? `Budget: ${brief.budgetMin?.toLocaleString("en") ?? "?"} – ${brief.budgetMax?.toLocaleString("en") ?? "?"} THB. At roughly ${rate.toLocaleString("en")} THB per m² of enclosed area (about half that for carports/terraces), this suggests about ${Math.round((brief.budgetMin ?? brief.budgetMax ?? 0) / rate)}–${Math.round((brief.budgetMax ?? brief.budgetMin ?? 0) / rate)} m² enclosed.`

@@ -247,3 +247,24 @@ model CompanySettings {
   contingencyPct     Decimal @default(5) @db.Decimal(5, 2)
   quoteValidityDays  Int     @default(30)
 }
+
+/// Selectable finishes (roof, floor, paint, doors, windows, sanitary…). Prices are THB per unit
+/// including labour; the package price difference is measured against the standard default.
+model Material {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  slot       String   // roof | exterior_wall | interior_wall | floor | ceiling | window | door | sanitary | kitchen
+  nameTh     String
+  nameEn     String
+  unit       String   // m2 | unit | set
+  unitPrice  Decimal  @db.Decimal(14, 2)
+  /// Display colour for 3D (hex) and surface roughness 0..1
+  color      String
+  roughness  Float    @default(0.8)
+  /// Packages this material is the default for: standard | premium | luxury
+  defaultFor String[]
+  sortOrder  Int      @default(0)
+  /// Placeholder price — replace with the company's real price list.
+  isSample   Boolean  @default(true)
+  active     Boolean  @default(true)
+}

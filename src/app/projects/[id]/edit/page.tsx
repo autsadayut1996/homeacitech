@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { db } from "@/lib/db";
 import { PlanSchema } from "@/lib/plan-core";
 import { PlanEditor } from "@/components/editor/PlanEditor";
+import { loadCatalog } from "@/lib/pricing/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function EditPlanPage({ params, searchParams }: { params: P
           {t("title")} — {project.title}
         </h1>
       </div>
-      <PlanEditor projectId={id} baseVersion={{ id: version.id, number: version.number }} initialPlan={plan.data} locale={locale} />
+      <PlanEditor projectId={id} baseVersion={{ id: version.id, number: version.number }} initialPlan={plan.data} catalog={await loadCatalog()} locale={locale} />
     </div>
   );
 }

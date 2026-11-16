@@ -41,7 +41,7 @@ import {
   updateRoom,
 } from "@/lib/editor/ops";
 import { historyReducer, initHistory } from "@/lib/editor/history";
-import { roughPrice } from "@/lib/pricing/rough";
+import { estimate, type CatalogMaterial } from "@/lib/pricing/materials";
 import { savePlanVersion } from "@/app/projects/[id]/edit/actions";
 
 type Tool = "select" | "room" | Opening["kind"];
@@ -66,11 +66,13 @@ export function PlanEditor({
   projectId,
   baseVersion,
   initialPlan,
+  catalog,
   locale,
 }: {
   projectId: string;
   baseVersion: { id: string; number: number | null };
   initialPlan: Plan;
+  catalog: CatalogMaterial[];
   locale: "th" | "en";
 }) {
   const t = useTranslations("editor");
@@ -128,6 +130,7 @@ export function PlanEditor({
 
   const validation = useMemo(() => validatePlan(plan), [plan]);
   const metrics = useMemo(() => computeMetrics(plan), [plan]);
+  const total = useMemo(() => estimate(plan, catalog).total, [plan, catalog]);
   const walls = useMemo(() => deriveWalls(plan, level), [plan, level]);
   const chains = useMemo(() => chainDimensions(plan, levelIndex), [plan, levelIndex]);
   const errorRooms = new Set(validation.errors.filter((e) => !e.levelId || e.levelId === level.id).flatMap((e) => e.roomIds ?? []));
@@ -532,7 +535,7 @@ export function PlanEditor({
           {saveError && <p className="text-xs text-bad">{saveError}</p>}
           <p className="text-xs text-muted">
             {t("summary", { area: metrics.totalAreaM2.toFixed(0), bed: metrics.bedrooms, bath: metrics.bathrooms })} ·{" "}
-            {roughPrice(metrics, plan.specPackage).toLocaleString(locale === "th" ? "th-TH" : "en-US")} {tu("baht")}*
+            {total.toLocaleString(locale === "th" ? "th-TH" : "en-US")} {tu("baht")}*
           </p>
         </div>
 

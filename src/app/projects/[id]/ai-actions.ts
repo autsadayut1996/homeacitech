@@ -8,7 +8,7 @@ import { PlanSchema, computeMetrics } from "@/lib/plan-core";
 import { AiError, MODEL, anthropicCaller, runDesignLoop, type DesignResult } from "@/lib/ai/generate";
 import { buildEditPrompt, buildGeneratePrompt, describeSite, type Variant } from "@/lib/ai/prompt";
 import { decompilePlan, type AiOption } from "@/lib/ai/format";
-import { roughPrice } from "@/lib/pricing/rough";
+import { estimatePlan } from "@/lib/pricing/catalog";
 import { nextVersionNumber } from "@/lib/versions";
 
 export type AiActionResult = { ok: true; versionId: string } | { ok: false; error: string; code?: string };
@@ -105,7 +105,7 @@ export async function generateOption(projectId: string, variant: Variant): Promi
       plan: json(result.plan),
       derived: json(metrics),
       aiSummary: json(summaryOf(result, { variant })),
-      totalPrice: roughPrice(metrics, result.plan.specPackage),
+      totalPrice: (await estimatePlan(result.plan)).total,
     },
   });
   await logGeneration("generate", version.id, prompt, result);
@@ -167,7 +167,7 @@ export async function editDesign(versionId: string, instruction: string): Promis
       plan: json(result.plan),
       derived: json(metrics),
       aiSummary: json(summaryOf(result, { instruction: text })),
-      totalPrice: roughPrice(metrics, result.plan.specPackage),
+      totalPrice: (await estimatePlan(result.plan)).total,
     },
   });
   await logGeneration("edit", version.id, prompt, result);

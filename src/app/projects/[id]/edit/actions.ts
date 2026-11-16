@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { PlanSchema, computeMetrics } from "@/lib/plan-core";
-import { roughPrice } from "@/lib/pricing/rough";
+import { estimatePlan } from "@/lib/pricing/catalog";
 import { nextVersionNumber } from "@/lib/versions";
 
 export type SaveResult = { ok: true; versionId: string; number: number } | { ok: false; error: string };
@@ -27,7 +27,7 @@ export async function savePlanVersion(projectId: string, parentId: string, plan:
       plan: p as unknown as Prisma.InputJsonValue,
       derived: metrics as unknown as Prisma.InputJsonValue,
       aiSummary: parent.aiSummary ?? undefined,
-      totalPrice: roughPrice(metrics, p.specPackage),
+      totalPrice: (await estimatePlan(p)).total,
     },
   });
   revalidatePath(`/projects/${projectId}`);
