@@ -143,6 +143,9 @@ model Approval {
   approver   String?
   /// Required for ARCHITECTURE / ENGINEERING approvals (ใบอนุญาตประกอบวิชาชีพ).
   licenseNo  String?
+  /// PRICE approvals: list price of the version and the requested discount (THB).
+  listPrice      Decimal? @db.Decimal(14, 2)
+  discountAmount Decimal? @db.Decimal(14, 2)
   note       String?
   decidedAt  DateTime?
   createdAt  DateTime       @default(now())
@@ -246,6 +249,8 @@ model CompanySettings {
   vatPct             Decimal @default(7) @db.Decimal(5, 2)
   contingencyPct     Decimal @default(5) @db.Decimal(5, 2)
   quoteValidityDays  Int     @default(30)
+  /// Sales may give up to this discount (% of list price) without manager approval.
+  salesDiscountLimitPct Decimal @default(3) @db.Decimal(5, 2)
 }
 
 /// Selectable finishes (roof, floor, paint, doors, windows, sanitary…). Prices are THB per unit

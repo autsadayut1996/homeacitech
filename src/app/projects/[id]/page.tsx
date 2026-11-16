@@ -6,6 +6,9 @@ import { LandSchema, RequirementsSchema, landAreaSqWa, siteFromLand } from "@/li
 import { loadRules } from "@/lib/compliance/server";
 import { evaluateAll, overallStatus, type Mark, type RuleResult } from "@/lib/compliance/rules";
 import { CompliancePanel } from "@/components/CompliancePanel";
+import { WorkflowPanel, type ApprovalRow } from "@/components/WorkflowPanel";
+import { RestoreVersionButton } from "@/components/RestoreVersionButton";
+import { priceIsApproved, type Status } from "@/lib/workflow";
 import { PlanSchema, area, buildableArea, formatRaiNganWa, validatePlan } from "@/lib/plan-core";
 import { SitePlanSvg } from "@/components/SitePlanSvg";
 import { PlanSummary } from "@/components/PlanSummary";
@@ -22,7 +25,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const { v: selected } = await searchParams;
   const project = await db.project.findUnique({
     where: { id },
-    include: { customer: true, brief: true, versions: { orderBy: [{ number: "desc" }, { createdAt: "desc" }] } },
+    include: { customer: true, brief: true, versions: { orderBy: [{ number: "desc" }, { createdAt: "desc" }] }, approvals: { orderBy: { createdAt: "asc" } } },
   });
   if (!project) notFound();
   const t = await getTranslations();
@@ -41,6 +44,25 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const versions = project.versions.filter((v) => !v.isOption && v.number !== null).sort((a, b) => a.number! - b.number!);
   const current = versions.find((v) => v.id === selected) ?? versions[versions.length - 1];
   const currentPlan = current ? PlanSchema.safeParse(current.plan) : null;
+  const latest = versions[versions.length - 1];
+  const settings = await db.companySettings.findUnique({ where: { id: "default" } });
+  const versionNo = new Map(project.versions.map((v) => [v.id, v.number]));
+  const approvalRows: ApprovalRow[] = project.approvals.map((a) => ({
+    id: a.id,
+    type: a.type,
+    status: a.status,
+    versionNumber: a.versionId ? (versionNo.get(a.versionId) ?? null) : null,
+    isCurrentVersion: !!latest && a.versionId === latest.id,
+    approver: a.approver,
+    licenseNo: a.licenseNo,
+    note: a.note,
+    listPrice: a.listPrice === null ? null : Number(a.listPrice),
+    discountAmount: a.discountAmount === null ? null : Number(a.discountAmount),
+    createdAt: a.createdAt.toISOString(),
+    decidedAt: a.decidedAt?.toISOString() ?? null,
+  }));
+  const approvedPrice = project.approvals.findLast((a) => a.type === "PRICE" && a.status === "APPROVED" && a.versionId === current?.id);
+  const priceFinal = !!approvedPrice && priceIsApproved(project.status as Status) && current?.id === latest?.id;
   const compliance: RuleResult[] | null = currentPlan?.success
     ? evaluateAll(loaded.rules, { plan: currentPlan.data, buildingType: req?.success ? req.data.buildingType : undefined, zone: land?.success ? land.data.zone : null })
     : null;
@@ -128,6 +150,15 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
         </section>
       </div>
 
+      <WorkflowPanel
+        projectId={project.id}
+        status={project.status as Status}
+        approvals={approvalRows}
+        version={latest ? { id: latest.id, number: latest.number!, price: latest.totalPrice ? Number(latest.totalPrice) : null } : null}
+        discountLimitPct={Number(settings?.salesDiscountLimitPct ?? 3)}
+        locale={locale}
+      />
+
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">{t("project.designs")}</h2>
         {project.brief && <AiDesignPanel projectId={project.id} hasOptions={options.length > 0} />}
@@ -159,6 +190,14 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
                   v{v.number}
                 </Link>
               ))}
+              {versions.length > 1 && (
+                <Link
+                  href={`/projects/${project.id}/compare?a=${(current.id === versions[0].id ? versions[1] : versions[versions.indexOf(current) - 1] ?? versions[0]).id}&b=${current.id}`}
+                  className="ml-2 text-accent hover:underline"
+                >
+                  ⇄ {t("wf.compare")}
+                </Link>
+              )}
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="font-medium">
@@ -171,10 +210,17 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
               <Link href={`/projects/${project.id}/design?v=${current.id}`} className="btn-ghost">
                 🧊 {t("studio.open")}
               </Link>
+              {current.id !== latest?.id && <RestoreVersionButton projectId={project.id} versionId={current.id} number={current.number ?? 0} locale={locale} />}
               {current.totalPrice && (
-                <p className="text-sm" title={t("ai.roughNote")}>
+                <p className="text-sm" title={t("ai.roughNote")} data-testid="price">
+                  {!priceFinal && <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-warn">{t("wf.draftBadge")}</span>}
                   <span className="text-muted">{t("ai.roughPrice")}: </span>
                   <span className="font-semibold">{baht(Number(current.totalPrice))}</span>
+                  {priceFinal && approvedPrice?.discountAmount && Number(approvedPrice.discountAmount) > 0 && (
+                    <span className="ml-1">
+                      − {baht(Number(approvedPrice.discountAmount))} = <span className="font-semibold text-ok">{baht(Number(current.totalPrice) - Number(approvedPrice.discountAmount))}</span>
+                    </span>
+                  )}
                   <span className="text-muted"> *</span>
                 </p>
               )}

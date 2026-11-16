@@ -26,14 +26,18 @@ interface Props {
   highlight?: string[];
   /** Regulation problems to draw (site coordinates). */
   marks?: { a: Point; b: Point; status: "pass" | "warn" | "fail"; levelId?: string }[];
+  /** Numbered comment pins (site coordinates). */
+  pins?: { x: number; y: number; label: string; resolved?: boolean; active?: boolean }[];
+  /** Client-only: receives the click position in SVG user units. */
+  onSvgClick?: (e: React.MouseEvent<SVGSVGElement>) => void;
   className?: string;
 }
 
 const PAD = 1.5;
 
-export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], marks = [], className }: Props) {
+function roadPolygons(site: Site) {
   const ccw = signedArea(site.boundary) >= 0;
-  const roadPolys = site.roads.map((r) => {
+  return site.roads.map((r) => {
     const e = edges(site.boundary)[r.edgeIndex];
     if (!e) return null;
     const n0 = outwardNormal(e);
@@ -41,6 +45,20 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
     const w = Math.min(r.widthM, 8);
     return { poly: [e[0], e[1], [e[1][0] + n[0] * w, e[1][1] + n[1] * w], [e[0][0] + n[0] * w, e[0][1] + n[1] * w]] as Point[], road: r };
   });
+}
+
+/** Mapping between site coordinates and this SVG's user units (for click handling). */
+export function siteSvgFrame(site: Site) {
+  const all = [...site.boundary, ...roadPolygons(site).flatMap((r) => r?.poly ?? [])];
+  const bb = bbox(all);
+  return {
+    toSvg: (p: Point): Point => [p[0] - bb.minX + PAD, bb.maxY - p[1] + PAD],
+    toSite: (x: number, y: number): Point => [x + bb.minX - PAD, bb.maxY + PAD - y],
+  };
+}
+
+export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], marks = [], pins = [], onSvgClick, className }: Props) {
+  const roadPolys = roadPolygons(site);
   const all = [...site.boundary, ...roadPolys.flatMap((r) => r?.poly ?? [])];
   const bb = bbox(all);
   const W = bb.width + PAD * 2;
@@ -60,7 +78,7 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
   const arrowC: Point = [W - PAD * 0.9, PAD * 0.9];
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className={className} role="img" style={{ background: "var(--paper)" }}>
+    <svg viewBox={`0 0 ${W} ${H}`} className={className} role="img" style={{ background: "var(--paper)" }} onClick={onSvgClick}>
       {roadPolys.map(
         (r, i) =>
           r && (
@@ -143,6 +161,15 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
             strokeLinecap="round"
           />
         ))}
+
+      {pins.map((pin, i) => (
+        <g key={`pin-${i}`} transform={`translate(${X([pin.x, pin.y])} ${Y([pin.x, pin.y])})`} className="pointer-events-none">
+          <circle r={fs * 0.9} fill={pin.active ? "var(--accent)" : pin.resolved ? "var(--muted)" : "var(--bad)"} stroke="var(--paper)" strokeWidth={fs * 0.15} />
+          <text fontSize={fs * 0.95} textAnchor="middle" dominantBaseline="central" fill="#fff" fontWeight={700}>
+            {pin.label}
+          </text>
+        </g>
+      ))}
 
       <g transform={`translate(${arrowC[0]} ${arrowC[1]})`}>
         <circle r={0.6} fill="var(--paper)" stroke="var(--muted)" strokeWidth={0.04} />

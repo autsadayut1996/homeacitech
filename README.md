@@ -78,6 +78,16 @@ Preliminary only — every screen says it must be certified by a licensed archit
 - Results show ✅/⚠️/❌ with explanations and source; violations are drawn on the plan, live in the 2D editor.
 - Projects pick the area whose Thai name matches the province, else Bangkok rules for Bangkok, else national defaults.
 
+## Approvals & versions (M8)
+- Status workflow `DRAFT → PROPOSED → PRICE_APPROVAL → DESIGN_REVIEW → APPROVED → CONTRACT_SIGNED → PERMIT_PREP`, enforced on the server by `src/lib/workflow.ts` (unit-tested); no step can be skipped.
+- Discounts up to `CompanySettings.salesDiscountLimitPct` (default 3%) are approved automatically; larger ones go to the sales manager.
+- Architect and engineer review at `/projects/:id/review`: pinned comments on the plan, approve (licence number required) or request changes.
+- `PERMIT_PREP` requires licensed architect **and** engineer approval of the contracted version.
+- Saving a new version during approval voids pending approvals (back to PROPOSED); after the contract the design is locked.
+- Prices carry a "ร่าง / DRAFT" badge until the price is approved.
+- `/projects/:id/compare?a=&b=`: side-by-side plans, metric and price deltas, room and material changes; any old version can be restored (as a new version).
+- No user accounts (single user): approver names and licence numbers are typed in and recorded with the decision.
+
 ## Milestones
 - [x] M1 Project skeleton, TH/EN, optional password gate (single user — no accounts)
 - [x] M2 Design brief form + plan data model, geometry, validator, metrics
@@ -86,5 +96,5 @@ Preliminary only — every screen says it must be certified by a licensed archit
 - [x] M5 3D viewer + materials
 - [ ] M6 Excel price import + BOQ
 - [x] M7 Building-regulation rules engine (Bangkok first)
-- [ ] M8 Versions + approvals
+- [x] M8 Versions + approvals
 - [ ] M9 Quotation / contract PDF

@@ -9,7 +9,7 @@ import { AiError, MODEL, anthropicCaller, runDesignLoop, type DesignResult } fro
 import { buildEditPrompt, buildGeneratePrompt, describeSite, type Variant } from "@/lib/ai/prompt";
 import { decompilePlan, type AiOption } from "@/lib/ai/format";
 import { estimatePlan } from "@/lib/pricing/catalog";
-import { nextVersionNumber } from "@/lib/versions";
+import { afterVersionAdded, checkCanAddVersion, nextVersionNumber } from "@/lib/versions";
 import { loadRules } from "@/lib/compliance/server";
 
 export type AiActionResult = { ok: true; versionId: string } | { ok: false; error: string; code?: string };
@@ -119,7 +119,10 @@ export async function generateOption(projectId: string, variant: Variant): Promi
 export async function chooseOption(versionId: string): Promise<AiActionResult> {
   const v = await db.designVersion.findUniqueOrThrow({ where: { id: versionId } });
   if (!v.isOption) return { ok: true, versionId };
+  const locked = await checkCanAddVersion(v.projectId);
+  if (locked) return { ok: false, error: locked.th, code: "locked" };
   await db.designVersion.update({ where: { id: versionId }, data: { isOption: false, number: await nextVersionNumber(v.projectId) } });
+  await afterVersionAdded(v.projectId);
   revalidatePath(`/projects/${v.projectId}`);
   return { ok: true, versionId };
 }
@@ -139,6 +142,8 @@ export async function editDesign(versionId: string, instruction: string): Promis
   const text = instruction.trim();
   if (!text) return { ok: false, error: "Empty instruction" };
   const source = await db.designVersion.findUniqueOrThrow({ where: { id: versionId } });
+  const locked = await checkCanAddVersion(source.projectId);
+  if (locked) return { ok: false, error: locked.th, code: "locked" };
   const plan = PlanSchema.parse(source.plan);
   const prev = (source.aiSummary ?? {}) as Partial<AiOption>;
   const current = decompilePlan(plan, prev);
@@ -173,6 +178,7 @@ export async function editDesign(versionId: string, instruction: string): Promis
     },
   });
   await logGeneration("edit", version.id, prompt, result);
+  await afterVersionAdded(source.projectId);
   revalidatePath(`/projects/${source.projectId}`);
   return { ok: true, versionId: version.id };
 }
