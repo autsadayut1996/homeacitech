@@ -4,6 +4,9 @@ Web app ให้เซลล์บริษัทรับสร้างบ้
 
 > ⚠️ แบบและราคาในระบบเป็น **แบบร่างเพื่อการขาย** ไม่ใช่แบบก่อสร้าง ต้องให้สถาปนิก/วิศวกรผู้มีใบอนุญาตตรวจรับรองก่อนใช้งานจริง
 
+## User manual
+See [docs/manual/index.html](docs/manual/index.html) (Thai, with screenshots).
+
 ## Stack
 Next.js 15 (App Router) · TypeScript · PostgreSQL + Prisma · next-intl (TH/EN, cookie-based) · Tailwind v4 · Vitest
 

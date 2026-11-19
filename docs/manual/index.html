@@ -1,0 +1,391 @@
+<title>คู่มือระบบออกแบบบ้าน</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  /* Layout: sticky contents rail on the left, one reading column of steps with screenshots on the right; stacks on phones. */
+  :root {
+    --bg: #f4f6f5;
+    --surface: #ffffff;
+    --ink: #1c2422;
+    --muted: #5b6965;
+    --line: #dce3e0;
+    --accent: #0f766e;
+    --accent-soft: #e2f0ed;
+    --warn: #9a5306;
+    --warn-soft: #fcf1df;
+    --bad: #b42318;
+    --ok: #157a3e;
+    --kbd: #eef1f0;
+    --font-display: "Anuphan", "IBM Plex Sans Thai", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans Thai", "Noto Sans Thai", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121816; --surface: #1a2220; --ink: #e5ece9; --muted: #9aaba6; --line: #2c3834;
+      --accent: #4fc2b2; --accent-soft: #1d3330; --warn: #f0b25c; --warn-soft: #33281a; --bad: #ff8a7a; --ok: #6fd39a; --kbd: #24302d;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121816; --surface: #1a2220; --ink: #e5ece9; --muted: #9aaba6; --line: #2c3834;
+    --accent: #4fc2b2; --accent-soft: #1d3330; --warn: #f0b25c; --warn-soft: #33281a; --bad: #ff8a7a; --ok: #6fd39a; --kbd: #24302d;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.75;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 32px 64px;
+  }
+  header.top { display: grid; gap: 14px; margin-bottom: 28px; }
+  .eyebrow { font-size: 13px; letter-spacing: 0.06em; color: var(--accent); font-weight: 600; }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.3; margin: 0; }
+  h1 { font-size: clamp(30px, 4.5vw, 44px); }
+  h2 { font-size: 26px; margin-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 22px; margin-bottom: 4px; }
+  p { margin: 8px 0; }
+  .lead { font-size: 18px; color: var(--muted); max-width: 62ch; }
+  .note {
+    background: var(--warn-soft); color: var(--warn); border-radius: 10px;
+    padding: 10px 14px; font-size: 14px; max-width: 76ch;
+  }
+  /* the real project status sequence, as shown in the app */
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; padding: 0; list-style: none; }
+  .flow li {
+    display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 12px 4px 4px; font-size: 14px;
+  }
+  .flow b {
+    display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: var(--surface); font-size: 12px;
+  }
+  .layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; align-items: start; }
+  nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); font-size: 14px; }
+  nav.toc p { font-weight: 600; margin: 0 0 6px; color: var(--muted); font-size: 13px; letter-spacing: 0.04em; }
+  nav.toc ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; counter-reset: toc; }
+  nav.toc a {
+    display: block; padding: 4px 10px; border-radius: 8px; color: var(--ink); text-decoration: none;
+  }
+  nav.toc a:hover, nav.toc a:focus-visible { background: var(--accent-soft); color: var(--accent); outline: none; }
+  nav.toc .group { margin-top: 10px; color: var(--muted); font-size: 12px; padding-left: 10px; }
+  main { display: grid; gap: 22px; min-width: 0; }
+  section.step {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px 26px;
+    scroll-margin-top: 16px; min-width: 0;
+  }
+  .step-head { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
+  .num {
+    font-family: var(--font-mono); font-size: 13px; color: var(--accent); background: var(--accent-soft);
+    border-radius: 6px; padding: 1px 8px;
+  }
+  .where { font-size: 14px; color: var(--muted); }
+  figure { margin: 16px 0 6px; }
+  figure img {
+    display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); background: #fff;
+  }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  ol.steps, ul.points { margin: 8px 0; padding-left: 22px; }
+  ol.steps li, ul.points li { margin: 4px 0; }
+  .table-wrap { overflow-x: auto; margin: 10px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 7px 10px; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  td:first-child { white-space: nowrap; }
+  kbd {
+    font-family: var(--font-mono); font-size: 12px; background: var(--kbd); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 5px; padding: 0 6px;
+  }
+  .chip { display: inline-block; border-radius: 999px; padding: 0 9px; font-size: 13px; background: var(--kbd); }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .two figure { margin: 8px 0; }
+  .tip { border-left: 3px solid var(--accent); padding: 4px 12px; margin: 12px 0; color: var(--ink); font-size: 15px; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; font-weight: 600; }
+  code { font-family: var(--font-mono); font-size: 13px; background: var(--kbd); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  pre { background: var(--kbd); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-size: 13px; }
+  footer { margin-top: 30px; font-size: 13px; color: var(--muted); }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    nav.toc { position: static; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    section.step { padding: 18px 16px; }
+  }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">คู่มือการใช้งาน · สำหรับทีมเซลล์และแอดมิน</span>
+    <h1>คู่มือระบบออกแบบบ้าน</h1>
+    <p class="lead">ระบบช่วยเซลล์ออกแบบบ้านให้ลูกค้าได้ทันทีระหว่างนัดคุย ตั้งแต่รับโจทย์ ให้ AI วางแปลน ปรับแก้ใน 2D/3D ดูราคา ตรวจกฎหมายเบื้องต้น ส่งอนุมัติ จนออกใบเสนอราคาและสัญญา</p>
+    <p class="note">แบบและราคาในระบบเป็น <strong>แบบร่างเพื่อการขาย</strong> ไม่ใช่แบบก่อสร้าง ต้องให้สถาปนิก/วิศวกรผู้มีใบอนุญาตตรวจรับรองก่อนใช้งานจริง และตอนนี้ราคาวัสดุยังเป็นข้อมูลตัวอย่าง</p>
+    <ol class="flow" aria-label="สถานะของโปรเจกต์ตามลำดับ">
+      <li><b>1</b>ร่าง</li>
+      <li><b>2</b>เสนอลูกค้า</li>
+      <li><b>3</b>รออนุมัติราคา</li>
+      <li><b>4</b>รอตรวจแบบ</li>
+      <li><b>5</b>อนุมัติแล้ว</li>
+      <li><b>6</b>เซ็นสัญญา</li>
+      <li><b>7</b>เตรียมยื่นขออนุญาต</li>
+    </ol>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="สารบัญ">
+      <p>สารบัญ</p>
+      <ol>
+        <li><a href="#start">เริ่มต้นใช้งาน</a></li>
+        <li><a href="#brief">กรอกโจทย์ลูกค้า</a></li>
+        <li><a href="#ai">ให้ AI ออกแบบ</a></li>
+        <li><a href="#project">หน้าโปรเจกต์</a></li>
+        <li><a href="#editor">แก้แปลน 2D</a></li>
+        <li><a href="#studio">3D และวัสดุ</a></li>
+        <li><a href="#rules">ตรวจกฎหมาย</a></li>
+        <li><a href="#approval">ขั้นอนุมัติ</a></li>
+        <li><a href="#versions">เทียบเวอร์ชัน</a></li>
+        <li><a href="#quote">ใบเสนอราคาและสัญญา</a></li>
+        <li><a href="#dxf">ส่งแบบเข้า AutoCAD</a></li>
+        <li class="group">สำหรับแอดมิน</li>
+        <li><a href="#admin-company">ตั้งค่าบริษัท/เอกสาร</a></li>
+        <li><a href="#admin-rules">ตั้งค่ากฎหมาย</a></li>
+        <li><a href="#faq">คำถามที่พบบ่อย</a></li>
+        <li><a href="#setup">ติดตั้งระบบ</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <section class="step" id="start">
+        <div class="step-head"><span class="num">01</span><h2>เริ่มต้นใช้งาน</h2></div>
+        <ol class="steps">
+          <li>เปิดลิงก์ของระบบ ถ้า browser ขอชื่อผู้ใช้และรหัสผ่าน ให้ใส่ชื่ออะไรก็ได้ และใส่รหัสผ่านที่แอดมินแจ้ง</li>
+          <li>หน้าแรกคือ <strong>รายการโปรเจกต์</strong> กดชื่อโปรเจกต์เพื่อเปิด หรือกด <span class="chip">+ สร้างโปรเจกต์ใหม่</span> มุมขวาบน</li>
+          <li>ปุ่ม <span class="chip">English</span> / <span class="chip">ภาษาไทย</span> สลับภาษาของหน้าจอ</li>
+        </ol>
+        <figure><img src="img/list.jpg" alt="หน้ารายการโปรเจกต์ แสดงรหัส ชื่อโปรเจกต์ ลูกค้า ขนาดที่ดิน และสถานะ" loading="lazy" width="1360" height="900"></figure>
+      </section>
+
+      <section class="step" id="brief">
+        <div class="step-head"><span class="num">02</span><h2>กรอกโจทย์ลูกค้า</h2><span class="where">ปุ่ม + สร้างโปรเจกต์ใหม่</span></div>
+        <p>กรอกระหว่างคุยกับลูกค้าได้เลย ช่องที่มี * จำเป็นต้องกรอก</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ส่วน</th><th>กรอกอะไร</th></tr></thead>
+            <tbody>
+              <tr><td>ข้อมูลลูกค้า</td><td>ชื่อ เบอร์ อีเมล หมายเหตุ</td></tr>
+              <tr><td>ที่ดิน</td><td>หน้ากว้าง × ลึก (ม.) หรือพิกัดมุมถ้าที่ดินไม่เป็นสี่เหลี่ยม · ขนาดตามโฉนด (ตร.วา) · ทิศที่หน้าที่ดินหันไป · ถนนที่ติดและความกว้าง · จังหวัด/เขต · สีผังเมือง เช่น ย.3</td></tr>
+              <tr><td>ความต้องการ</td><td>ประเภทอาคาร สไตล์ จำนวนชั้น ห้องนอน ห้องน้ำ ที่จอดรถ ห้องพิเศษ พื้นที่ใช้สอยโดยประมาณ</td></tr>
+              <tr><td>งบประมาณ</td><td>ต่ำสุด–สูงสุด (บาท)</td></tr>
+              <tr><td>ลูกค้าเล่าอะไรมา</td><td>พิมพ์ตามที่ลูกค้าพูด เช่น "พ่อแม่อายุเยอะ อยากได้ห้องนอนชั้นล่าง ไม่อยากร้อน" AI จะนำไปใช้ตอนออกแบบ</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="tip"><strong>ทิศของหน้าที่ดิน</strong> สำคัญมาก AI ใช้ข้อมูลนี้เลี่ยงไม่ให้ห้องนอนรับแดดบ่ายทิศตะวันตก ส่วน <strong>สีผังเมือง</strong> ใช้ตรวจ FAR/OSR ถ้ายังไม่รู้ เว้นไว้ก่อนได้</p>
+        <figure><img src="img/brief.jpg" alt="ฟอร์มโจทย์ลูกค้า มีส่วนข้อมูลลูกค้า ข้อมูลที่ดิน และความต้องการ" loading="lazy" width="1360" height="900"></figure>
+        <p>แก้โจทย์ภายหลังได้ที่ปุ่ม <span class="chip">แก้ไขโจทย์</span> ในหน้าโปรเจกต์</p>
+      </section>
+
+      <section class="step" id="ai">
+        <div class="step-head"><span class="num">03</span><h2>ให้ AI ออกแบบ 3 ทางเลือก</h2><span class="where">หน้าโปรเจกต์ → แบบ / เวอร์ชัน</span></div>
+        <ol class="steps">
+          <li>กด <span class="chip">✨ ให้ AI ออกแบบ 3 ทางเลือก</span> ระบบออกแบบ 3 แนวทางพร้อมกัน: <strong>A คุ้มค่า</strong>, <strong>B สมดุล</strong>, <strong>C เน้นพื้นที่</strong></li>
+          <li>รอแบบละประมาณ 1–4 นาที ระหว่างรอระบบจะตรวจแปลนและให้ AI แก้ซ้ำเองจนผ่าน</li>
+          <li>แต่ละการ์ดแสดงแปลนทุกชั้น พื้นที่ใช้สอย ราคาประมาณ ผลตรวจแปลน ข้อดี และข้อควรพิจารณา</li>
+          <li>กด <span class="chip">เลือกแบบนี้</span> กับแบบที่ลูกค้าชอบ แบบนั้นจะกลายเป็นเวอร์ชันถัดไป ส่วนแบบที่ไม่ใช้กด <span class="chip">ลบ</span> ได้</li>
+        </ol>
+        <figure><img src="img/ai-option.jpg" alt="การ์ดทางเลือกจาก AI แสดงแปลนสองชั้น พื้นที่ ราคาประมาณ ข้อดีและข้อควรพิจารณา" loading="lazy" width="440" height="800" style="max-width:440px"><figcaption>ภาพประกอบหน้าตาการ์ดทางเลือก (ข้อมูลตัวอย่าง)</figcaption></figure>
+        <h3>สั่งแก้ด้วยข้อความ</h3>
+        <p>ใต้แปลนมีช่อง <strong>สั่งแก้ด้วยข้อความ</strong> พิมพ์ภาษาพูดได้ เช่น "ขยายห้องนั่งเล่นอีก 1 เมตร", "ย้ายห้องน้ำไปติดห้องนอนใหญ่", "เพิ่มห้องพระชั้น 2" ทุกครั้งที่แก้จะได้เวอร์ชันใหม่</p>
+      </section>
+
+      <section class="step" id="project">
+        <div class="step-head"><span class="num">04</span><h2>หน้าโปรเจกต์</h2></div>
+        <p>ทุกอย่างของลูกค้ารายนี้อยู่ในหน้านี้ เรียงจากบนลงล่าง:</p>
+        <ul class="points">
+          <li><strong>ที่ดิน</strong> ผังที่ดิน เส้นประแดงคือพื้นที่ที่สร้างได้หลังหักระยะร่นตามกฎ ขนาดเป็น ตร.วา และ ไร่-งาน-วา</li>
+          <li><strong>ความต้องการ</strong> สรุปโจทย์และสิ่งที่ลูกค้าเล่า</li>
+          <li><strong>สถานะและการอนุมัติ</strong> แถบ 7 ขั้น พร้อมปุ่มของขั้นที่ต้องทำตอนนี้</li>
+          <li><strong>ใบเสนอราคา / สัญญา</strong> ออกใบใหม่และดูใบที่เคยออก</li>
+          <li><strong>แบบ / เวอร์ชัน</strong> ทางเลือกจาก AI, แถบเวอร์ชัน v1 v2 …, ปุ่มแก้แปลน 2D / 3D / DXF, สรุปพื้นที่ และผลตรวจ</li>
+        </ul>
+        <figure><img src="img/project-top.jpg" alt="หน้าโปรเจกต์ ส่วนบนแสดงข้อมูลที่ดิน ความต้องการ และสถานะการอนุมัติ" loading="lazy" width="1360" height="900"></figure>
+        <p>ราคาที่ยังไม่ได้อนุมัติจะมีป้าย <span class="chip warn">ร่าง / DRAFT</span> กำกับไว้เสมอ</p>
+      </section>
+
+      <section class="step" id="editor">
+        <div class="step-head"><span class="num">05</span><h2>แก้แปลน 2D</h2><span class="where">ปุ่ม ✏️ แก้ไขแปลน 2D</span></div>
+        <figure><img src="img/editor.jpg" alt="หน้าแก้แปลน 2D แสดงแปลนชั้น 1 ห้องที่เลือกมีจุดจับที่ผนัง และแผงข้อมูลห้องด้านขวา" loading="lazy" width="1360" height="900"></figure>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ต้องการ</th><th>ทำอย่างไร</th></tr></thead>
+            <tbody>
+              <tr><td>ย้ายห้อง</td><td>ลากห้อง ห้องจะดูดติดกับผนังห้องข้าง ๆ และกริดให้เอง</td></tr>
+              <tr><td>ยืด/หดห้อง</td><td>คลิกเลือกห้อง แล้วลากจุดสี่เหลี่ยมกลางผนัง ห้องอีกฝั่งของผนังจะขยับตาม ถ้าต้องการปรับห้องเดียว กด <kbd>Alt</kbd> ค้าง</td></tr>
+              <tr><td>ใส่ขนาดเป็นตัวเลข</td><td>พิมพ์กว้าง/ลึก/X/Y ในแผงด้านขวา</td></tr>
+              <tr><td>เพิ่มห้อง</td><td>กด <span class="chip">+ ห้อง</span> เลือกประเภท แล้วลากวาดบนแปลน</td></tr>
+              <tr><td>เพิ่มประตู/หน้าต่าง</td><td>กด <span class="chip">+ ประตู</span> <span class="chip">+ หน้าต่าง</span> <span class="chip">+ ประตูบานเลื่อน</span> <span class="chip">+ ช่องโล่ง</span> แล้วคลิกบนผนัง</td></tr>
+              <tr><td>เลื่อนประตู/หน้าต่าง</td><td>ลากไปตามผนัง หรือพิมพ์ขนาดในแผงด้านขวา</td></tr>
+              <tr><td>ลบ</td><td>เลือกแล้วกด <kbd>Delete</kbd></td></tr>
+              <tr><td>ย้อน/ทำซ้ำ</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td></tr>
+              <tr><td>เลื่อนทีละช่อง</td><td>ปุ่มลูกศรบนคีย์บอร์ด</td></tr>
+              <tr><td>ซูม/เลื่อนมุมมอง</td><td>ล้อเมาส์ซูม · ลากพื้นที่ว่างเพื่อเลื่อน</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>ด้านขวาจะ <strong>ตรวจแปลนและตรวจกฎหมายทันที</strong> ที่แก้ ห้องหรือจุดที่ผิดเป็นสีแดง คลิกที่ข้อความปัญหาเพื่อกระโดดไปที่ห้องนั้น เมื่อเสร็จกด <span class="chip">บันทึกเป็นเวอร์ชันใหม่</span> แบบเดิมจะไม่ถูกเขียนทับ</p>
+        <p class="tip">ในชั้นบนจะเห็นห้องชั้นล่างเป็นเส้นประ ใช้จัดผนังและห้องน้ำให้ตรงกับชั้นล่าง และเมื่อย้ายบันได บันไดจะย้ายพร้อมกันทุกชั้น</p>
+      </section>
+
+      <section class="step" id="studio">
+        <div class="step-head"><span class="num">06</span><h2>3D และวัสดุ</h2><span class="where">ปุ่ม 🧊 3D และวัสดุ</span></div>
+        <figure><img src="img/studio.jpg" alt="หน้า 3D แสดงบ้าน 2 ชั้นหลังคาปั้นหยา และรายการวัสดุพื้นพร้อมส่วนต่างราคา" loading="lazy" width="1360" height="900"></figure>
+        <ul class="points">
+          <li><strong>หมุนรอบบ้าน</strong> ลากเพื่อหมุน ล้อเมาส์ซูม คลิกขวาลากเพื่อเลื่อน</li>
+          <li><strong>ทั้งหลัง / ชั้น 1 / ชั้น 2</strong> เลือกชั้นเพื่อตัดหลังคาออกและดูภายใน</li>
+          <li><strong>เดินในบ้าน</strong> คลิกที่ภาพ 3D แล้วใช้ <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> เดิน <kbd>Shift</kbd> วิ่ง <kbd>Esc</kbd> ออก</li>
+          <li><strong>แพ็กเกจ</strong> Standard / Premium / Luxury แสดงราคารวมและส่วนต่างทันที</li>
+          <li><strong>เลือกวัสดุทีละหมวด</strong> สีใน 3D เปลี่ยนทันที ตัวเลขสีส้ม (+) คือแพงขึ้น สีเขียว (−) คือถูกลง เทียบกับวัสดุที่ใช้อยู่ ด้านบนสุดแสดงส่วนต่างเทียบกับเวอร์ชันที่บันทึกไว้</li>
+          <li><span class="chip">📷 ใช้ภาพนี้ในใบเสนอราคา</span> หมุนบ้านให้ได้มุมสวยแล้วกด ภาพนี้จะไปอยู่ในใบเสนอราคา</li>
+        </ul>
+        <p>กด <span class="chip">บันทึกเป็นเวอร์ชันใหม่</span> เมื่อลูกค้าตกลงเรื่องวัสดุ</p>
+      </section>
+
+      <section class="step" id="rules">
+        <div class="step-head"><span class="num">07</span><h2>ตรวจกฎหมายเบื้องต้น</h2><span class="where">หน้าโปรเจกต์ ใต้แปลน · และใน 2D editor</span></div>
+        <figure><img src="img/compliance.jpg" alt="กล่องตรวจข้อกฎหมายอาคารเบื้องต้น แสดงผลแต่ละข้อพร้อมไอคอน" loading="lazy" width="1290" height="600"></figure>
+        <p><span class="ok">✅ ผ่าน</span> · <span class="warn">⚠️ ควรตรวจ</span> · <span class="bad">❌ ไม่ผ่าน</span> กดที่แต่ละข้อเพื่อดูรายละเอียดและแหล่งอ้างอิง จุดที่ผิดจะขีดเป็นเส้นแดง/ส้มบนแปลน</p>
+        <p>ข้อที่ตรวจ: ระยะช่องเปิดและระเบียงถึงแนวเขต · ผนังทึบชิดแนวเขต · ระยะร่นจากถนน · ความสูงเทียบความกว้างถนน · อาคารสูง 23 ม. · FAR/OSR ตามสีผังเมือง · ที่จอดรถ (อาคารพาณิชย์)</p>
+        <p class="note">เป็นการตรวจเบื้องต้นเท่านั้น ป้าย "ยังไม่ยืนยันค่า" หมายถึงสถาปนิกยังไม่ได้ยืนยันค่าของกฎข้อนั้นในหน้าตั้งค่ากฎหมาย</p>
+      </section>
+
+      <section class="step" id="approval">
+        <div class="step-head"><span class="num">08</span><h2>ขั้นอนุมัติ</h2><span class="where">หน้าโปรเจกต์ → สถานะและการอนุมัติ</span></div>
+        <p>ระบบบังคับลำดับขั้นตอนเอง ข้ามขั้นไม่ได้</p>
+        <ol class="steps">
+          <li><strong>เสนอลูกค้า</strong> กดเมื่อพร้อมนำเสนอแบบและราคา</li>
+          <li><strong>ส่วนลด</strong> ใส่จำนวนเงินที่ลูกค้าขอลด ถ้าไม่เกินเพดาน (ค่าเริ่มต้น 3%) กด <span class="chip">ยืนยันราคา</span> ได้เลย ถ้าเกินต้องกด <span class="chip">ส่งหัวหน้าเซลล์อนุมัติ</span></li>
+          <li><strong>หัวหน้าเซลล์</strong> ใส่ชื่อ แล้วกดอนุมัติหรือส่งกลับ</li>
+          <li><strong>ตรวจแบบ</strong> กด <span class="chip">ไปหน้าตรวจแบบ</span> สถาปนิกและวิศวกรคลิกบนแปลนเพื่อปักหมุดคอมเมนต์ได้ และต้องใส่ <strong>เลขใบอนุญาตประกอบวิชาชีพ</strong> ก่อนกดอนุมัติแบบ</li>
+          <li><strong>เซ็นสัญญา</strong> กดบันทึกเมื่อเซ็นแล้ว หลังจากนี้แบบจะถูกล็อก แก้ไม่ได้</li>
+          <li><strong>เตรียมยื่นขออนุญาต</strong> ทำได้เมื่อมีทั้งสถาปนิกและวิศวกรอนุมัติแบบเวอร์ชันที่เซ็นสัญญาแล้ว</li>
+        </ol>
+        <div class="two">
+          <figure><img src="img/workflow-price.jpg" alt="ใส่ส่วนลดและส่งหัวหน้าเซลล์อนุมัติ" loading="lazy" width="1290" height="260"><figcaption>ใส่ส่วนลดที่ลูกค้าขอ</figcaption></figure>
+          <figure><img src="img/workflow-approve.jpg" alt="หัวหน้าเซลล์อนุมัติราคา" loading="lazy" width="1290" height="260"><figcaption>หัวหน้าเซลล์อนุมัติ</figcaption></figure>
+        </div>
+        <figure><img src="img/review.jpg" alt="หน้าตรวจแบบ มีหมุดคอมเมนต์บนแปลน รายการคอมเมนต์ และกล่องอนุมัติของสถาปนิกและวิศวกร" loading="lazy" width="1360" height="900"><figcaption>หน้าตรวจแบบ: ปักหมุดคอมเมนต์และอนุมัติพร้อมเลขใบอนุญาต</figcaption></figure>
+        <p class="tip">ถ้าแก้แบบระหว่างรออนุมัติ การอนุมัติเดิมจะถูกยกเลิก และสถานะกลับไปที่ "เสนอลูกค้า" เพื่อให้ราคาและแบบที่อนุมัติตรงกันเสมอ</p>
+      </section>
+
+      <section class="step" id="versions">
+        <div class="step-head"><span class="num">09</span><h2>เทียบและย้อนเวอร์ชัน</h2><span class="where">แถบเวอร์ชัน → ⇄ เทียบเวอร์ชัน</span></div>
+        <figure><img src="img/compare.jpg" alt="หน้าเทียบเวอร์ชัน แสดงแปลนสองเวอร์ชันข้างกัน และตารางส่วนต่างราคา พื้นที่ และวัสดุ" loading="lazy" width="1360" height="900"></figure>
+        <ul class="points">
+          <li>เลือกเวอร์ชันที่จะเทียบสองฝั่ง ตารางด้านขวาแสดงส่วนต่างราคา พื้นที่ ห้องนอน/น้ำ FAR/OSR</li>
+          <li>รายการห้องที่เพิ่ม ลบ ย้าย หรือปรับขนาด และวัสดุที่เปลี่ยน</li>
+          <li>ถ้าลูกค้าอยากกลับไปแบบเก่า เปิดเวอร์ชันนั้นแล้วกด <span class="chip">↺ ย้อนกลับเป็น vN</span> ระบบจะสร้างเวอร์ชันใหม่ ประวัติเดิมยังอยู่ครบ</li>
+        </ul>
+      </section>
+
+      <section class="step" id="quote">
+        <div class="step-head"><span class="num">10</span><h2>ใบเสนอราคาและสัญญา</h2><span class="where">หน้าโปรเจกต์ → ใบเสนอราคา / สัญญา</span></div>
+        <ol class="steps">
+          <li>เลือกภาษาของเอกสาร (ไทย/อังกฤษ) แล้วกด <span class="chip">📄 ออกใบเสนอราคา</span></li>
+          <li>ระบบใช้แบบเวอร์ชันล่าสุด ใบจะได้เลขที่ QT-ปี-ลำดับ และ <strong>ตรึงข้อมูล ณ วันที่ออก</strong> แก้ราคาภายหลังใบเดิมก็ไม่เปลี่ยน</li>
+          <li>กด <span class="chip">🖨 พิมพ์ / บันทึกเป็น PDF</span> แล้วเลือกปลายทาง "บันทึกเป็น PDF" (Save as PDF) กระดาษ A4 แนะนำเปิด "กราฟิกพื้นหลัง" (Background graphics)</li>
+          <li>ปุ่ม <span class="chip">สัญญาจ้างก่อสร้าง</span> ด้านบนเปิดสัญญาที่ระบบเติมข้อมูลลูกค้า ราคา และงวดชำระให้แล้ว</li>
+        </ol>
+        <figure><img src="img/quotation.jpg" alt="ใบเสนอราคา มีโลโก้ ข้อมูลบริษัท ลูกค้า ภาพ 3D แปลน รายการวัสดุ และลายน้ำร่าง" loading="lazy" width="1100" height="1500" style="max-width:640px"></figure>
+        <p>ในใบมี: โลโก้และข้อมูลบริษัท · ลูกค้าและโครงการ · ภาพ 3D และแปลนทุกชั้น · รายการวัสดุ · ราคา ส่วนลด VAT ยอดรวมพร้อมตัวอักษร (บาทถ้วน) · งวดชำระ · เงื่อนไข · อ้างอิงฐานราคาและวันที่ · ช่องลงนาม</p>
+        <p class="tip">ถ้าราคายังไม่ได้รับอนุมัติตอนออกใบ ทุกหน้าจะมีลายน้ำ <strong>"ร่าง / DRAFT"</strong> เมื่ออนุมัติราคาแล้ว ให้ออกใบใหม่ จะได้ใบที่ไม่มีลายน้ำ</p>
+      </section>
+
+      <section class="step" id="dxf">
+        <div class="step-head"><span class="num">11</span><h2>ส่งแบบเข้า AutoCAD</h2><span class="where">ปุ่ม ⬇ DXF (AutoCAD)</span></div>
+        <p>ได้ไฟล์ <code>.dxf</code> ของแปลนทุกชั้น หน่วยมิลลิเมตร เปิดใน AutoCAD ได้ทุกเวอร์ชัน ถ้าต้องการไฟล์ DWG ให้ Save As ใน AutoCAD</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Layer</th><th>เนื้อหา</th></tr></thead>
+            <tbody>
+              <tr><td><code>A-WALL</code></td><td>ผนัง (เว้นช่องตรงประตูหน้าต่าง)</td></tr>
+              <tr><td><code>A-DOOR</code> / <code>A-GLAZ</code></td><td>ประตูพร้อมเส้นวงเปิด, ประตูบานเลื่อน / หน้าต่าง</td></tr>
+              <tr><td><code>A-STRS</code></td><td>ลูกขั้นบันได</td></tr>
+              <tr><td><code>A-TEXT</code> / <code>A-DIMS</code></td><td>ชื่อห้องและพื้นที่ / เส้นบอกขนาด</td></tr>
+              <tr><td><code>A-ROOF</code> / <code>A-OUTD</code></td><td>แนวชายคา / ที่จอดรถ ระเบียง</td></tr>
+              <tr><td><code>C-PROP</code> / <code>C-SETB</code> / <code>C-ROAD</code></td><td>เขตที่ดิน / ระยะร่น / ถนน</td></tr>
+              <tr><td><code>A-ANNO</code></td><td>หัวกระดาษ ทิศเหนือ หมายเหตุ "ไม่ใช่แบบก่อสร้าง"</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>ข้อความไทยใช้ฟอนต์ Tahoma ถ้าเครื่องไหนแสดงไทยไม่ได้ ให้เปลี่ยนฟอนต์ของ text style ชื่อ "THAI" ใน AutoCAD เป็นฟอนต์ไทยที่มีในเครื่อง</p>
+      </section>
+
+      <section class="step" id="admin-company">
+        <div class="step-head"><span class="num">A1</span><h2>ตั้งค่าบริษัทและเอกสาร</h2><span class="where">เมนู ตั้งค่าบริษัท/เอกสาร</span></div>
+        <figure><img src="img/settings-company.jpg" alt="หน้าตั้งค่าบริษัท มีข้อมูลบริษัท โลโก้ VAT ยืนราคา เพดานส่วนลด และงวดชำระ" loading="lazy" width="1360" height="1600" style="max-width:720px"></figure>
+        <ul class="points">
+          <li><strong>ข้อมูลบริษัท</strong> ชื่อไทย/อังกฤษ ที่อยู่ เลขผู้เสียภาษี โทร อีเมล เว็บไซต์ และอัปโหลดโลโก้</li>
+          <li><strong>ราคาและส่วนลด</strong> VAT % · จำนวนวันยืนราคา · เพดานส่วนลดที่เซลล์ให้เองได้</li>
+          <li><strong>งวดชำระเงิน</strong> เพิ่ม/ลบงวดได้ รวมกันต้องได้ 100% พอดี</li>
+          <li><strong>เงื่อนไขในใบเสนอราคา</strong> และ <strong>แม่แบบสัญญา</strong> (ไทย/อังกฤษ) ในแม่แบบใส่ช่องอย่าง <code>{{customer.name}}</code> <code>{{price.total}}</code> <code>{{payment.schedule}}</code> แล้วระบบจะเติมข้อมูลให้</li>
+        </ul>
+        <p class="note">ส่วนที่ยังขึ้นว่า "ยังเป็นข้อความตัวอย่าง" ควรแทนด้วยข้อมูลจริง โดยเฉพาะ <strong>เนื้อหาสัญญา ซึ่งต้องให้ฝ่ายกฎหมายของบริษัทเป็นผู้กำหนด</strong> การแก้หน้านี้มีผลกับใบที่ออกใหม่เท่านั้น</p>
+      </section>
+
+      <section class="step" id="admin-rules">
+        <div class="step-head"><span class="num">A2</span><h2>ตั้งค่ากฎหมายตามพื้นที่</h2><span class="where">เมนู ตั้งค่ากฎหมาย</span></div>
+        <figure><img src="img/settings-rules.jpg" alt="หน้าตั้งค่ากฎหมาย แสดงกฎแต่ละข้อพร้อมค่าพารามิเตอร์และแหล่งอ้างอิง" loading="lazy" width="1360" height="900"></figure>
+        <ol class="steps">
+          <li>เปิดแต่ละข้อเพื่อดูค่า แหล่งอ้างอิง และคำอธิบายพารามิเตอร์</li>
+          <li>ให้สถาปนิกตรวจค่า แก้ถ้าจำเป็น แล้วติ๊ก <strong>ยืนยันแล้ว</strong> พร้อมใส่ชื่อและเลขใบอนุญาต</li>
+          <li><strong>FAR/OSR กรุงเทพฯ</strong> ต้องกรอกค่าของแต่ละสีผังเมืองตามผังเมืองรวมฉบับที่บังคับใช้ เช่น <code>{"zones":{"ย.3":{"far":2.5,"osrPercent":20}}}</code></li>
+          <li><strong>เพิ่มจังหวัดใหม่</strong> ได้ที่ด้านล่างของหน้า ระบบคัดลอกกฎจากพื้นที่ต้นแบบ แล้วแก้ตามเทศบัญญัติท้องถิ่น โปรเจกต์ที่ชื่อจังหวัดตรงกันจะใช้กฎชุดนั้นอัตโนมัติ</li>
+        </ol>
+      </section>
+
+      <section class="step" id="faq">
+        <div class="step-head"><span class="num">?</span><h2>คำถามที่พบบ่อย</h2></div>
+        <h3>กดให้ AI ออกแบบแล้วขึ้นว่ายังไม่ได้ตั้งค่า API key</h3>
+        <p>แจ้งผู้ดูแลระบบให้ใส่ <code>ANTHROPIC_API_KEY</code> ใน Vercel แล้ว deploy ใหม่</p>
+        <h3>AI ออกแบบนานหรือขึ้นว่าไม่สำเร็จ</h3>
+        <p>ลองกดใหม่อีกครั้ง ถ้าเกิดซ้ำบ่อย อาจต้องให้ผู้ดูแลเพิ่มเวลาประมวลผลบน Vercel</p>
+        <h3>ราคาที่เห็นใช้ได้จริงไหม</h3>
+        <p>ยังไม่ได้ ตอนนี้เป็นราคาประมาณจากอัตราต่อ ตร.ม. และราคาวัสดุตัวอย่าง จะใช้ราคาจริงเมื่อนำเข้าไฟล์ราคาของบริษัท</p>
+        <h3>แก้แบบไม่ได้ ขึ้นว่าเซ็นสัญญาแล้ว</h3>
+        <p>หลังเซ็นสัญญาแบบถูกล็อกโดยตั้งใจ การเปลี่ยนแปลงหลังเซ็นสัญญาต้องทำเป็นใบเปลี่ยนแปลงงานแยก</p>
+        <h3>ใครกดอนุมัติได้บ้าง</h3>
+        <p>ระบบยังไม่มีบัญชีผู้ใช้แยกคน จึงตรวจไม่ได้ว่าผู้กดเป็นใคร แต่บังคับให้ใส่ชื่อและเลขใบอนุญาตทุกครั้ง และเก็บไว้ในประวัติการอนุมัติ</p>
+      </section>
+
+      <section class="step" id="setup">
+        <div class="step-head"><span class="num">IT</span><h2>ติดตั้งระบบ (สำหรับผู้ดูแล)</h2></div>
+        <details>
+          <summary>ขั้นตอนติดตั้งบน Vercel</summary>
+          <ol class="steps">
+            <li>Vercel → Add New → Project → เลือก repo <code>autsadayut1996/homeacitech</code></li>
+            <li>แท็บ Storage → สร้าง Neon (Postgres) แล้วเชื่อมกับโปรเจกต์</li>
+            <li>Settings → Environment Variables: <code>DATABASE_URL</code> (pooled), <code>DIRECT_URL</code> (direct/unpooled), <code>APP_PASSWORD</code> (รหัสผ่านเข้าเว็บ), <code>ANTHROPIC_API_KEY</code></li>
+            <li>Build Command: <code>npm run vercel-build</code> แล้ว Deploy</li>
+            <li>ใส่ข้อมูลตั้งต้นครั้งเดียว จากเครื่องที่มี Node.js:
+              <pre>DATABASE_URL="ค่า DIRECT_URL" npx prisma db seed</pre>
+              <p class="note">คำสั่งนี้ลบข้อมูลเดิมทั้งหมดก่อนใส่ข้อมูลตัวอย่าง รันครั้งเดียวตอนเริ่มเท่านั้น</p>
+            </li>
+          </ol>
+        </details>
+      </section>
+
+      <footer>คู่มือนี้อ้างอิงระบบเวอร์ชันที่มีใบเสนอราคา/สัญญา (M9) · ภาพหน้าจอใช้ข้อมูลตัวอย่าง</footer>
+    </main>
+  </div>
+</div>
