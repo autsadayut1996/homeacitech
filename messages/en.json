@@ -273,7 +273,10 @@
     "unit_m2": "m²",
     "unit_unit": "door",
     "unit_set": "set",
-    "inUse": "In use"
+    "inUse": "In use",
+    "snap": "Use this view in quotations",
+    "snapHint": "Save the current 3D view as the quotation picture",
+    "snapSaved": "Picture saved"
   },
   "compliance": {
     "title": "Preliminary building-regulation check",
@@ -286,7 +289,8 @@
     "short": "Regulations"
   },
   "nav": {
-    "rules": "Regulation settings"
+    "rules": "Regulation settings",
+    "company": "Company & documents"
   },
   "rulesAdmin": {
     "title": "Building regulations by area",
@@ -391,5 +395,82 @@
   "export": {
     "dxf": "DXF (AutoCAD)",
     "dxfHint": "Download all floor plans as DXF in millimetres with separate layers — opens in AutoCAD"
+  },
+  "doc": {
+    "quotation": "Quotation",
+    "contract": "Construction contract",
+    "number": "No.",
+    "date": "Date",
+    "validUntil": "Valid until",
+    "status": "Status",
+    "draft": "DRAFT",
+    "customer": "Customer",
+    "project": "Project",
+    "land": "plot {sqwa} sq. wa",
+    "designVersion": "Design version {n}",
+    "areas": "Total usable area {total} m² (indoor {indoor} m²) · {bed} bed · {bath} bath · {park} parking",
+    "spec": "Specification",
+    "item": "Item",
+    "material": "Material / specification",
+    "quantity": "Quantity",
+    "price": "Price summary",
+    "amount": "Amount (THB)",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "afterDiscount": "After discount",
+    "vat": "VAT {pct}%",
+    "total": "Grand total",
+    "payment": "Payment schedule",
+    "terms": "Terms",
+    "salesDraft": "The design in this quotation is a sales draft, not a construction drawing. It must be checked and signed by a licensed architect/engineer before construction.",
+    "signCustomer": "Customer",
+    "signSales": "Sales",
+    "signApprover": "Approved by",
+    "signOwner": "Owner",
+    "signContractor": "Contractor",
+    "signWitness": "Witness",
+    "refQuotation": "Quotation ref.",
+    "back": "Back to project",
+    "print": "Print / Save as PDF",
+    "printHint": "Press print and choose \"Save as PDF\" · A4 · enable \"Background graphics\""
+  },
+  "quotes": {
+    "title": "Quotations / contracts",
+    "issue": "Issue quotation",
+    "hintDraft": "Price not approved yet — quotations issued now carry a DRAFT watermark",
+    "hintFinal": "Price approved — quotations are issued without a watermark",
+    "final": "Final",
+    "open": "Quotation",
+    "contract": "Contract"
+  },
+  "companyAdmin": {
+    "title": "Company & document settings",
+    "intro": "Used on newly issued quotations and contracts (issued documents do not change)",
+    "company": "Company",
+    "nameTh": "Company name (Thai)",
+    "nameEn": "Company name (English)",
+    "address": "Address",
+    "taxId": "Tax ID",
+    "phone": "Phone",
+    "email": "Email",
+    "website": "Website",
+    "logo": "Logo",
+    "removeLogo": "Remove logo",
+    "pricing": "Pricing & discounts",
+    "vatPct": "VAT (%)",
+    "quoteValidityDays": "Quotation validity (days)",
+    "salesDiscountLimitPct": "Discount sales may give without approval (%)",
+    "payment": "Payment schedule",
+    "labelTh": "Instalment (Thai)",
+    "labelEn": "Instalment (English)",
+    "addInstalment": "Add instalment",
+    "sum": "Total {n}% (must be 100%)",
+    "quoteTerms": "Quotation terms (Thai | English)",
+    "contract": "Contract template (Thai | English) — wording set by your legal team",
+    "placeholders": "Filled in automatically:",
+    "sample": "still sample text",
+    "save": "Save",
+    "saved": "Saved",
+    "note": "Issued quotations keep the data from their issue date — issue a new one to use updated settings"
   }
 }

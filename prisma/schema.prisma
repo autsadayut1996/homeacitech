@@ -95,6 +95,8 @@ model DesignVersion {
   ruleSet            RuleSet?          @relation(fields: [ruleSetId], references: [id])
   totalPrice         Decimal?          @db.Decimal(14, 2)
   isOption           Boolean           @default(false) // AI alternative not yet chosen
+  /// 3D snapshot (JPEG data URL) chosen in the 3D studio for quotations.
+  previewImage       String?
   parentId           String?           // version this one was derived from (edits)
   generations        AiGeneration[]
   comments           ReviewComment[]
@@ -157,12 +159,15 @@ model Quotation {
   project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   versionId   String
   version     DesignVersion @relation(fields: [versionId], references: [id])
-  number      String        @unique
+  number      String        @unique // QT-2026-0001
   discount    Decimal       @default(0) @db.Decimal(14, 2)
+  /// Not price-approved when issued → printed with a DRAFT watermark.
   isDraft     Boolean       @default(true)
   locale      String        @default("th")
   pdfUrl      String?
   validUntil  DateTime?
+  /// Everything printed on the document, frozen at issue time (src/lib/documents/snapshot.ts).
+  snapshot    Json?
   createdAt   DateTime      @default(now())
 }
 
@@ -243,7 +248,16 @@ model CompanySettings {
   address            String?
   taxId              String?
   phone              String?
-  logoUrl            String?
+  logoUrl            String?   // data URL (small image stored in the database)
+  email              String?
+  website            String?
+  /// [{ labelTh, labelEn, pct }] — must add up to 100
+  paymentTerms       Json?
+  quoteTermsTh       String?
+  quoteTermsEn       String?
+  /// Contract body with {{placeholders}} — content is defined by the company's legal team.
+  contractTemplateTh String?
+  contractTemplateEn String?
   overheadPct        Decimal @default(10) @db.Decimal(5, 2)
   profitPct          Decimal @default(15) @db.Decimal(5, 2)
   vatPct             Decimal @default(7) @db.Decimal(5, 2)

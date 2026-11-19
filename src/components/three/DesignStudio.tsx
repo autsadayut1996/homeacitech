@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Plan } from "@/lib/plan-core";
@@ -17,6 +17,7 @@ import {
   type Slot,
 } from "@/lib/pricing/materials";
 import { savePlanVersion } from "@/app/projects/[id]/edit/actions";
+import { savePreviewImage } from "@/app/projects/[id]/quote-actions";
 import type { Colors } from "./HouseScene";
 
 const HouseScene = dynamic(() => import("./HouseScene"), { ssr: false, loading: () => <div className="grid h-full place-items-center text-sm text-muted">3D…</div> });
@@ -54,6 +55,20 @@ export function DesignStudio({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dirty = plan !== initialPlan;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [snapMsg, setSnapMsg] = useState<string | null>(null);
+  const snapshot3d = async () => {
+    const c = canvasRef.current;
+    if (!c) return;
+    // downscale to keep the stored image small
+    const w = Math.min(1200, c.width);
+    const tmp = document.createElement("canvas");
+    tmp.width = w;
+    tmp.height = Math.round((c.height * w) / c.width);
+    tmp.getContext("2d")!.drawImage(c, 0, 0, tmp.width, tmp.height);
+    const r = await savePreviewImage(baseVersion.id, tmp.toDataURL("image/jpeg", 0.85));
+    setSnapMsg(r.ok ? t("snapSaved") : (r.error ?? "error"));
+  };
 
   const est = useMemo(() => estimate(plan, catalog), [plan, catalog]);
   const packageTotals = useMemo(() => Object.fromEntries(PACKAGES.map((p) => [p, estimate(applyPackage(plan, p), catalog).total])), [plan, catalog]);
@@ -110,9 +125,13 @@ export function DesignStudio({
             ))}
           </div>
           <p className="text-xs text-muted">{t(`hint_${mode}`)}</p>
+          <button className="btn-ghost ml-auto px-2 py-1.5" onClick={snapshot3d} title={t("snapHint")}>
+            📷 {t("snap")}
+          </button>
+          {snapMsg && <span className="text-xs text-ok">{snapMsg}</span>}
         </div>
         <div id="house-3d" className="flex-1 overflow-hidden rounded-lg border border-line" data-testid="three-canvas">
-          <HouseScene key={mode} plan={plan} colors={colors} mode={mode} showLevel={showLevel} />
+          <HouseScene key={mode} plan={plan} colors={colors} mode={mode} showLevel={showLevel} onCanvas={(c) => (canvasRef.current = c)} />
         </div>
       </div>
 

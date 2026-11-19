@@ -96,6 +96,14 @@ Preliminary only — every screen says it must be certified by a licensed archit
 - Not yet: electrical and sanitary layers (the plan has no MEP data yet), true DIMENSION entities (dimensions are lines + text), title block / sheet layout.
 - Validated with ezdxf (strict load + audit: 0 errors); `src/lib/export/dxf.ts` is unit-tested.
 
+## Quotations & contracts (M9)
+- Project page → "ออกใบเสนอราคา" (Thai or English). Each quotation gets a number (QT-YYYY-NNNN) and a **snapshot** of everything printed, so issued documents never change.
+- `/quotations/:id` and `/quotations/:id/contract`: A4 print layouts — "พิมพ์ / บันทึกเป็น PDF" uses the browser's Save-as-PDF, which renders Thai perfectly and needs no server-side PDF engine on Vercel.
+- Content: logo/company, customer & project, 3D picture (saved from the 3D studio with "📷 ใช้ภาพนี้ในใบเสนอราคา"), floor plans, specification, price lines (base + material upgrades), discount, VAT, total in words (Thai/English), payment instalments, terms, price-base reference and date, sales-draft disclaimer, signature boxes.
+- "ร่าง / DRAFT" watermark on every page unless the price was approved when the quotation was issued.
+- Contract = admin-editable template with `{{placeholders}}` (wording must come from the company's legal team).
+- `/settings/company`: company details, logo, VAT, validity, sales discount limit, payment instalments (must total 100%), quotation terms, contract templates. Empty fields fall back to sample text, flagged as such.
+
 ## Milestones
 - [x] M1 Project skeleton, TH/EN, optional password gate (single user — no accounts)
 - [x] M2 Design brief form + plan data model, geometry, validator, metrics
@@ -105,4 +113,4 @@ Preliminary only — every screen says it must be certified by a licensed archit
 - [ ] M6 Excel price import + BOQ
 - [x] M7 Building-regulation rules engine (Bangkok first)
 - [x] M8 Versions + approvals
-- [ ] M9 Quotation / contract PDF
+- [x] M9 Quotation / contract PDF

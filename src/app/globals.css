@@ -62,3 +62,73 @@ body {
 @utility btn-ghost {
   @apply btn border border-line bg-paper hover:bg-bg;
 }
+
+/* ---- printable documents (quotation / contract) ---- */
+.doc-paper {
+  position: relative;
+  margin: 0 auto;
+  max-width: 210mm;
+  background: #fff;
+  color: #111;
+  padding: 14mm 14mm 18mm;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.doc-paper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.doc-paper th,
+.doc-paper td {
+  border: 1px solid #d4d4d4;
+  padding: 4px 6px;
+  vertical-align: top;
+}
+.doc-paper th {
+  background: #f4f4f4;
+  font-weight: 600;
+  text-align: left;
+}
+.doc-section {
+  break-inside: avoid;
+  margin-top: 14px;
+}
+.doc-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+}
+.doc-watermark span {
+  transform: rotate(-30deg);
+  font-size: 110px;
+  font-weight: 800;
+  color: rgb(220 38 38 / 0.13);
+  white-space: nowrap;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body {
+    background: #fff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .doc-paper {
+    box-shadow: none;
+    padding: 0;
+    max-width: none;
+  }
+  /* fixed elements repeat on every printed page */
+  .doc-watermark {
+    position: fixed;
+  }
+}

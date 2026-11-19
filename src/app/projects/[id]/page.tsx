@@ -8,6 +8,8 @@ import { evaluateAll, overallStatus, type Mark, type RuleResult } from "@/lib/co
 import { CompliancePanel } from "@/components/CompliancePanel";
 import { WorkflowPanel, type ApprovalRow } from "@/components/WorkflowPanel";
 import { RestoreVersionButton } from "@/components/RestoreVersionButton";
+import { QuotationsPanel, type QuoteRow } from "@/components/QuotationsPanel";
+import type { QuoteSnapshot } from "@/lib/documents/snapshot";
 import { priceIsApproved, type Status } from "@/lib/workflow";
 import { PlanSchema, area, buildableArea, formatRaiNganWa, validatePlan } from "@/lib/plan-core";
 import { SitePlanSvg } from "@/components/SitePlanSvg";
@@ -25,7 +27,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const { v: selected } = await searchParams;
   const project = await db.project.findUnique({
     where: { id },
-    include: { customer: true, brief: true, versions: { orderBy: [{ number: "desc" }, { createdAt: "desc" }] }, approvals: { orderBy: { createdAt: "asc" } } },
+    include: { customer: true, brief: true, versions: { orderBy: [{ number: "desc" }, { createdAt: "desc" }] }, approvals: { orderBy: { createdAt: "asc" } }, quotations: { orderBy: { createdAt: "desc" } } },
   });
   if (!project) notFound();
   const t = await getTranslations();
@@ -156,6 +158,24 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
         approvals={approvalRows}
         version={latest ? { id: latest.id, number: latest.number!, price: latest.totalPrice ? Number(latest.totalPrice) : null } : null}
         discountLimitPct={Number(settings?.salesDiscountLimitPct ?? 3)}
+        locale={locale}
+      />
+
+      <QuotationsPanel
+        projectId={project.id}
+        hasVersion={!!latest}
+        priceFinal={!!latest && priceIsApproved(project.status as Status) && project.approvals.some((a) => a.type === "PRICE" && a.status === "APPROVED" && a.versionId === latest.id)}
+        quotes={project.quotations.map(
+          (q): QuoteRow => ({
+            id: q.id,
+            number: q.number,
+            createdAt: q.createdAt.toISOString(),
+            isDraft: q.isDraft,
+            locale: q.locale,
+            total: (q.snapshot as unknown as QuoteSnapshot | null)?.money.total ?? 0,
+            versionNumber: versionNo.get(q.versionId) ?? null,
+          }),
+        )}
         locale={locale}
       />
 
