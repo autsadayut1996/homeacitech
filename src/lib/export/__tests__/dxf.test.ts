@@ -49,8 +49,10 @@ describe("DXF export", () => {
     const plot = out.find((e) => e.type === "TEXT" && layerOf(e) === "A-ANNO")!;
     expect(plot).toBeTruthy();
     const xs = (s: string) => entities(s).out.flatMap((e) => e.codes.filter(([c]) => c === 10).map(([, v]) => Number(v)));
-    expect(Math.max(...xs(dxf))).toBeGreaterThan(30000);
-    expect(Math.max(...xs(planToDxf(sampleTwoStoreyPlan(), { units: "m" })))).toBeLessThan(60);
+    const mm = Math.max(...xs(dxf));
+    const m = Math.max(...xs(planToDxf(sampleTwoStoreyPlan(), { units: "m" })));
+    expect(mm).toBeGreaterThan(30000);
+    expect(mm / m).toBeCloseTo(1000, 3);
   });
 
   it("keeps Thai for cp874 and escapes other non-ASCII text", () => {
@@ -60,6 +62,13 @@ describe("DXF export", () => {
     expect(Array.from(bytes)).toEqual([0xa1, 0x20, 0xdf, 0x20, 0xfb, 0x20, 0x41]);
     // the whole file encodes without substitutions
     expect(Array.from(encodeDxf(dxf)).includes(0x3f) && !dxf.includes("?")).toBe(false);
+  });
+
+  it("adds four elevations on their own layers", () => {
+    const elevTitles = out.filter((e) => e.type === "TEXT" && layerOf(e) === "A-ANNO" && /รูปด้าน/.test(e.codes.find(([c]) => c === 1)?.[1] ?? ""));
+    expect(elevTitles).toHaveLength(4);
+    expect(out.filter((e) => layerOf(e) === "A-ELEV").length).toBeGreaterThan(40);
+    expect(out.filter((e) => layerOf(e) === "A-ELEV-OPNG").length).toBeGreaterThan(40);
   });
 
   it("includes the not-for-construction note", () => {

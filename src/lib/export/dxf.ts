@@ -23,6 +23,8 @@ import {
   outwardNormal,
   roofParts,
   roomLabel,
+  elevations,
+  type Elevation,
   signedArea,
   toSite,
   uniqSorted,
@@ -39,6 +41,9 @@ export const LAYERS = {
   "A-TEXT": { color: 7, ltype: "CONTINUOUS", th: "ข้อความ/ชื่อห้อง" },
   "A-DIMS": { color: 8, ltype: "CONTINUOUS", th: "เส้นบอกขนาด" },
   "A-ANNO": { color: 2, ltype: "CONTINUOUS", th: "หัวกระดาษ/ทิศเหนือ" },
+  "A-ELEV": { color: 7, ltype: "CONTINUOUS", th: "รูปด้าน: ผนัง หลังคา ระดับดิน" },
+  "A-ELEV-OPNG": { color: 4, ltype: "CONTINUOUS", th: "รูปด้าน: ประตู หน้าต่าง ราวกันตก" },
+  "A-ELEV-DIMS": { color: 8, ltype: "CONTINUOUS", th: "รูปด้าน: ระดับชั้น ความสูง" },
   "C-PROP": { color: 3, ltype: "CONTINUOUS", th: "แนวเขตที่ดิน" },
   "C-SETB": { color: 1, ltype: "DASHED", th: "เส้นระยะร่น" },
   "C-ROAD": { color: 8, ltype: "CONTINUOUS", th: "ถนน" },
@@ -330,8 +335,24 @@ export function planToDxf(plan: Plan, opts: DxfOptions = {}): string {
   const gap = 12; // metres between floors (room for dimensions and the north arrow)
   plan.levels.forEach((level, li) => drawLevel(w, plan, level, li, [li * (sb.width + gap) - sb.minX, -sb.minY], locale));
 
-  // title block text under the first floor
-  const tb: Point = [0, -5];
+  // elevations in a row below the floor plans
+  const ELEV_LAYER = { wall: "A-ELEV", roof: "A-ELEV", ground: "A-ELEV", opening: "A-ELEV-OPNG", glass: "A-ELEV-OPNG", railing: "A-ELEV-OPNG", level: "A-ELEV-DIMS", dim: "A-ELEV-DIMS" } as const;
+  const SIDE_TH = { front: "รูปด้านหน้า", back: "รูปด้านหลัง", left: "รูปด้านซ้าย", right: "รูปด้านขวา" } as const;
+  const SIDE_EN = { front: "Front elevation", back: "Rear elevation", left: "Left elevation", right: "Right elevation" } as const;
+  const elevTop = -14;
+  let ex = 0;
+  elevations(plan).forEach((e: Elevation) => {
+    const off: Point = [ex - e.bounds.minU, elevTop - e.bounds.maxZ];
+    const P = (p: [number, number]): Point => [p[0] + off[0], p[1] + off[1]];
+    for (const l of e.lines) w.line(ELEV_LAYER[l.kind], P(l.a), P(l.b));
+    for (const t of e.texts) w.text("A-ELEV-DIMS", P(t.at), t.size, t.text, t.rotate ? -t.rotate : 0);
+    const label = `${locale === "th" ? SIDE_TH[e.side] : SIDE_EN[e.side]} (${e.facing})`;
+    w.text("A-ANNO", P([(e.bounds.minU + e.bounds.maxU) / 2, e.bounds.maxZ + 0.6]), 0.45, label);
+    ex += e.bounds.maxU - e.bounds.minU + 4;
+  });
+
+  // title block text under the elevations
+  const tb: Point = [0, elevTop - 16];
   const lines = [
     opts.title ?? "",
     opts.subtitle ?? "",

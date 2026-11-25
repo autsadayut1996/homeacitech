@@ -79,3 +79,60 @@ export function ridgeHeight(p: RoofPart): number {
   const run = p.kind === "shed" ? short : short / 2;
   return run * Math.tan((p.pitchDeg * Math.PI) / 180);
 }
+
+export interface RoofMesh {
+  /** [x, y, z] in plan coordinates (z = elevation, metres). */
+  vertices: [number, number, number][];
+  /** Polygons as vertex indices. */
+  faces: number[][];
+}
+
+/** 3D surfaces of a roof part (used to project elevations). Flat roofs/slabs are thin boxes. */
+export function roofMesh(p: RoofPart): RoofMesh {
+  const oh = p.overhangM;
+  const x0 = p.x0 - oh;
+  const x1 = p.x1 + oh;
+  const y0 = p.y0 - oh;
+  const y1 = p.y1 + oh;
+  const z = p.baseZ;
+  if (p.kind === "slab" || p.kind === "flat") {
+    const t = p.kind === "flat" ? 0.25 : 0.15;
+    const v: [number, number, number][] = [
+      [x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z],
+      [x0, y0, z + t], [x1, y0, z + t], [x1, y1, z + t], [x0, y1, z + t],
+    ];
+    return { vertices: v, faces: [[0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7], [4, 5, 6, 7]] };
+  }
+  const rh = ridgeHeight(p);
+  // local frame: u along the ridge, w across it
+  const alongX = p.ridgeAxis === "x";
+  const [u0, u1, w0, w1] = alongX ? [x0, x1, y0, y1] : [y0, y1, x0, x1];
+  const wm = (w0 + w1) / 2;
+  const half = (w1 - w0) / 2;
+  const P = (u: number, w: number, h: number): [number, number, number] => (alongX ? [u, w, z + h] : [w, u, z + h]);
+  if (p.kind === "hip") {
+    const r0 = Math.min(u0 + half, (u0 + u1) / 2);
+    const r1 = Math.max(u1 - half, (u0 + u1) / 2);
+    return {
+      vertices: [P(u0, w0, 0), P(u1, w0, 0), P(u1, w1, 0), P(u0, w1, 0), P(r0, wm, rh), P(r1, wm, rh)],
+      faces: [[0, 1, 5, 4], [2, 3, 4, 5], [3, 0, 4], [1, 2, 5]],
+    };
+  }
+  if (p.kind === "gable") {
+    return {
+      vertices: [P(u0, w0, 0), P(u1, w0, 0), P(u1, w1, 0), P(u0, w1, 0), P(u0, wm, rh), P(u1, wm, rh)],
+      faces: [[0, 1, 5, 4], [2, 3, 4, 5], [3, 0, 4], [1, 2, 5]],
+    };
+  }
+  if (p.kind === "shed") {
+    return {
+      vertices: [P(u0, w0, 0), P(u1, w0, 0), P(u1, w1, rh), P(u0, w1, rh), P(u0, w1, 0), P(u1, w1, 0)],
+      faces: [[0, 1, 2, 3], [0, 3, 4], [1, 2, 5]],
+    };
+  }
+  // butterfly: valley along the middle, high outer edges
+  return {
+    vertices: [P(u0, w0, rh), P(u1, w0, rh), P(u1, wm, 0), P(u0, wm, 0), P(u1, w1, rh), P(u0, w1, rh), P(u0, w0, 0), P(u1, w0, 0), P(u0, w1, 0), P(u1, w1, 0)],
+    faces: [[0, 1, 2, 3], [3, 2, 4, 5], [6, 0, 3], [3, 5, 8], [7, 1, 2], [2, 4, 9]],
+  };
+}

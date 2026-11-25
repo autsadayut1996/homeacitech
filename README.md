@@ -87,6 +87,9 @@ Preliminary only — every screen says it must be certified by a licensed archit
 - `/projects/:id/compare?a=&b=`: side-by-side plans, metric and price deltas, room and material changes; any old version can be restored (as a new version).
 - No user accounts (single user): approver names and licence numbers are typed in and recorded with the decision.
 
+## Elevations
+Front / rear / left / right elevations are generated from the plan (`src/lib/plan-core/elevation.ts`, unit-tested): exterior wall faces turned to the viewer, doors and windows at real size and height (hidden ones left out), balcony railings, carport posts, the roof projected from its 3D surfaces (hip/gable/shed/butterfly/flat), ground line, floor levels and overall height. Shown on the project page, printed on quotations and written to the DXF (layers `A-ELEV`, `A-ELEV-OPNG`, `A-ELEV-DIMS`). Outline drawings only — no material detail.
+
 ## DXF export for AutoCAD (phase 2, pulled forward)
 `GET /projects/:id/export/dxf?v=<versionId>&units=mm|m&lang=th|en` — button "⬇ DXF (AutoCAD)" on the project page.
 - AutoCAD R12 ASCII DXF (opens in every AutoCAD version, BricsCAD, LibreCAD…), millimetres by default; floors side by side, each with plot, setbacks and road.

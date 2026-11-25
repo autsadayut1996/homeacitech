@@ -2,6 +2,8 @@ import { getTranslations } from "next-intl/server";
 import type { QuoteSnapshot } from "@/lib/documents/snapshot";
 import { bahtText, bahtTextEn } from "@/lib/documents/bahttext";
 import { SitePlanSvg } from "@/components/SitePlanSvg";
+import { ElevationSvg } from "@/components/ElevationSvg";
+import { elevations } from "@/lib/plan-core";
 import { DocHeader, Signatures, Watermark } from "./DocHeader";
 
 export async function QuotationDocument({ s }: { s: QuoteSnapshot }) {
@@ -61,6 +63,17 @@ export async function QuotationDocument({ s }: { s: QuoteSnapshot }) {
         <p className="mt-1 text-xs">
           {t("doc.areas", { total: s.areas.total.toFixed(0), indoor: s.areas.indoor.toFixed(0), bed: s.areas.bedrooms, bath: s.areas.bathrooms, park: s.areas.parking })}
         </p>
+      </div>
+
+      <div className="doc-section" data-testid="doc-elevations">
+        <p className="mb-1 font-semibold">{t("elev.title")}</p>
+        <div className="grid grid-cols-2 gap-2">
+          {elevations(s.plan).map((e) => (
+            <figure key={e.side} className="rounded border border-neutral-300 p-1">
+              <ElevationSvg e={e} title={t("elev.name", { side: t(`elev.${e.side}` as never), dir: t(`facing.${e.facing}` as never) })} className="w-full" />
+            </figure>
+          ))}
+        </div>
       </div>
 
       <div className="doc-section">

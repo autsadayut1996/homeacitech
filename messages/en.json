@@ -466,5 +466,14 @@
     "save": "Save",
     "saved": "Saved",
     "note": "Issued quotations keep the data from their issue date — issue a new one to use updated settings"
+  },
+  "elev": {
+    "title": "Elevations",
+    "name": "{side} (faces {dir})",
+    "front": "Front elevation",
+    "back": "Rear elevation",
+    "left": "Left elevation",
+    "right": "Right elevation",
+    "note": "Outline elevations from the plan — real floor heights and opening sizes, no material detail; the architect adds the detailing"
   }
 }

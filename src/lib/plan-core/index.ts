@@ -9,3 +9,4 @@ export * from "./roof";
 export * from "./takeoff";
 export * from "./diff";
 export * from "./wallsegments";
+export * from "./elevation";

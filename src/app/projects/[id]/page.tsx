@@ -11,8 +11,9 @@ import { RestoreVersionButton } from "@/components/RestoreVersionButton";
 import { QuotationsPanel, type QuoteRow } from "@/components/QuotationsPanel";
 import type { QuoteSnapshot } from "@/lib/documents/snapshot";
 import { priceIsApproved, type Status } from "@/lib/workflow";
-import { PlanSchema, area, buildableArea, formatRaiNganWa, validatePlan } from "@/lib/plan-core";
+import { PlanSchema, area, buildableArea, elevations, formatRaiNganWa, validatePlan } from "@/lib/plan-core";
 import { SitePlanSvg } from "@/components/SitePlanSvg";
+import { ElevationSvg } from "@/components/ElevationSvg";
 import { PlanSummary } from "@/components/PlanSummary";
 import { AiDesignPanel } from "@/components/AiDesignPanel";
 import { EditDesignBox } from "@/components/EditDesignBox";
@@ -249,6 +250,17 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
               )}
             </div>
             <PlanViews plan={currentPlan.data} locale={locale} marks={compliance?.flatMap((r) => r.marks) ?? []} />
+            <div className="space-y-2" data-testid="elevations">
+              <h3 className="font-semibold">{t("elev.title")}</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                {elevations(currentPlan.data).map((e) => (
+                  <figure key={e.side} className="card p-3">
+                    <ElevationSvg e={e} title={t("elev.name", { side: t(`elev.${e.side}`), dir: t(`facing.${e.facing}`) })} className="w-full" />
+                  </figure>
+                ))}
+              </div>
+              <p className="text-xs text-muted">{t("elev.note")}</p>
+            </div>
             <EditDesignBox versionId={current.id} projectId={project.id} />
             <PlanSummary plan={currentPlan.data} result={validatePlan(currentPlan.data)} />
             {compliance && (
