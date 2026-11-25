@@ -16,15 +16,29 @@ export const DEFAULT_PAYMENT_TERMS: PaymentTerm[] = [
   { labelTh: "งวดที่ 7 ส่งมอบงาน", labelEn: "7th — handover", pct: 5 },
 ];
 
-export const DEFAULT_QUOTE_TERMS_TH = `1. ราคานี้เป็นราคาประเมินจากแบบร่างเพื่อการขาย ราคาสุดท้ายจะยืนยันหลังสถาปนิก/วิศวกรตรวจแบบและจัดทำแบบก่อสร้าง
-2. ราคารวมค่าวัสดุและค่าแรงตามรายการวัสดุที่ระบุ ไม่รวมค่าขออนุญาตก่อสร้าง ค่าถมดิน ค่ารื้อถอน และงานนอกเหนือจากที่ระบุ
-3. ระยะเวลาก่อสร้างโดยประมาณจะแจ้งในสัญญา
-4. ใบเสนอราคานี้มีผลถึงวันที่ระบุไว้ด้านบน`;
+export const DEFAULT_QUOTE_TERMS_TH = `งานโครงสร้างที่ไม่ได้ระบุในแบบ ให้ทำตามหลักวิชาช่าง และมาตรฐานวิศวกรรมสถานแห่งประเทศไทย (วสท.)
+ราคานี้ใช้เสาเข็มตามการออกแบบของวิศวกร ตามผลสำรวจดิน
+รับประกันงานโครงสร้าง 10 ปี
+รับประกันหลังคารั่วซึม 5 ปี
+รับประกันงานทั่วไป 1 ปี
+รับประกันปลวก 3 ปี จากบริษัทกำจัดปลวก
+ราคาประเมินจากแบบร่างเพื่อการขาย ราคาสุดท้ายยืนยันหลังสถาปนิก/วิศวกรตรวจแบบและจัดทำแบบก่อสร้าง
+ไม่รวมค่าธรรมเนียมขออนุญาต ค่าถมดิน ค่ารื้อถอน ค่าขอมิเตอร์น้ำ-ไฟ และงานนอกเหนือจากที่ระบุ`;
 
-export const DEFAULT_QUOTE_TERMS_EN = `1. This price is estimated from a sales draft. The final price is confirmed after the architect/engineer review and construction drawings.
-2. Includes materials and labour for the listed specification; excludes permit fees, land filling, demolition and work not listed.
-3. The estimated construction period is stated in the contract.
-4. This quotation is valid until the date shown above.`;
+export const DEFAULT_QUOTE_TERMS_EN = `Any structural work not specified in the drawings follows good practice and the standards of the Engineering Institute of Thailand (EIT).
+Piles as designed by the engineer according to the soil investigation.
+10-year structural warranty.
+5-year roof leakage warranty.
+1-year general workmanship warranty.
+3-year termite warranty from the pest-control company.
+Estimated from a sales draft; the final price is confirmed after the architect/engineer review and construction drawings.
+Excludes permit fees, land filling, demolition, utility meter applications and work not listed.`;
+
+/** Cover-letter text. {location} is replaced with the project location. */
+export const DEFAULT_INTRO_TH = `ตามที่ท่านมีความประสงค์จะปลูกสร้างบ้านพักอาศัย สถานที่ก่อสร้าง {location} บริษัทฯ ใคร่ขอเสนอรายละเอียดการประมาณราคาค่าก่อสร้างตามพื้นที่ก่อสร้างและรายการวัสดุประกอบอาคาร ดังนี้`;
+export const DEFAULT_INTRO_EN = `As per your request to build a house at {location}, we hereby submit our estimate of the construction cost based on the building area and the specification, as follows:`;
+export const DEFAULT_CLOSING_TH = `จึงเรียนมาเพื่อโปรดพิจารณา หากมีข้อสงสัยประการใด บริษัทฯ ยินดีให้คำชี้แจงเพิ่มเติม`;
+export const DEFAULT_CLOSING_EN = `We submit this for your consideration. Should you have any questions, we are pleased to provide further clarification.`;
 
 /** Placeholder contract — the company's legal team must supply the real wording. */
 export const DEFAULT_CONTRACT_TH = `สัญญาจ้างก่อสร้างบ้าน

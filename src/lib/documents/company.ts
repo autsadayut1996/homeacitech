@@ -1,6 +1,18 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { DEFAULT_CONTRACT_EN, DEFAULT_CONTRACT_TH, DEFAULT_PAYMENT_TERMS, DEFAULT_QUOTE_TERMS_EN, DEFAULT_QUOTE_TERMS_TH, type PaymentTerm } from "./defaults";
+import {
+  DEFAULT_CLOSING_EN,
+  DEFAULT_CLOSING_TH,
+  DEFAULT_CONTRACT_EN,
+  DEFAULT_CONTRACT_TH,
+  DEFAULT_INTRO_EN,
+  DEFAULT_INTRO_TH,
+  DEFAULT_PAYMENT_TERMS,
+  DEFAULT_QUOTE_TERMS_EN,
+  DEFAULT_QUOTE_TERMS_TH,
+  type PaymentTerm,
+} from "./defaults";
+import { DEFAULT_SPEC, SpecTemplateSchema, type SpecSection } from "./spec";
 
 export interface Company {
   nameTh: string;
@@ -19,13 +31,22 @@ export interface Company {
   quoteTermsEn: string;
   contractTemplateTh: string;
   contractTemplateEn: string;
+  quoteFormCode: string | null;
+  priceIncludesVat: boolean;
+  quoteIntroTh: string;
+  quoteIntroEn: string;
+  quoteClosingTh: string;
+  quoteClosingEn: string;
+  specTemplate: SpecSection[];
   /** True while the documents still use the built-in sample content. */
-  usesDefaults: { terms: boolean; contract: boolean; payment: boolean };
+  usesDefaults: { terms: boolean; contract: boolean; payment: boolean; spec: boolean };
 }
 
 /** Company settings with built-in defaults filling any empty field. */
 export async function getCompany(): Promise<Company> {
   const c = await db.companySettings.findUnique({ where: { id: "default" } });
+  const spec = SpecTemplateSchema.safeParse(c?.specTemplate);
+  const hasSpec = spec.success && spec.data.length > 0;
   const terms = Array.isArray(c?.paymentTerms) ? (c!.paymentTerms as unknown as PaymentTerm[]) : null;
   return {
     nameTh: c?.nameTh ?? "บริษัทของคุณ",
@@ -44,6 +65,13 @@ export async function getCompany(): Promise<Company> {
     quoteTermsEn: c?.quoteTermsEn || DEFAULT_QUOTE_TERMS_EN,
     contractTemplateTh: c?.contractTemplateTh || DEFAULT_CONTRACT_TH,
     contractTemplateEn: c?.contractTemplateEn || DEFAULT_CONTRACT_EN,
-    usesDefaults: { terms: !c?.quoteTermsTh, contract: !c?.contractTemplateTh, payment: !terms?.length },
+    quoteFormCode: c?.quoteFormCode ?? null,
+    priceIncludesVat: c?.priceIncludesVat ?? true,
+    quoteIntroTh: c?.quoteIntroTh || DEFAULT_INTRO_TH,
+    quoteIntroEn: c?.quoteIntroEn || DEFAULT_INTRO_EN,
+    quoteClosingTh: c?.quoteClosingTh || DEFAULT_CLOSING_TH,
+    quoteClosingEn: c?.quoteClosingEn || DEFAULT_CLOSING_EN,
+    specTemplate: hasSpec ? spec.data : DEFAULT_SPEC,
+    usesDefaults: { terms: !c?.quoteTermsTh, contract: !c?.contractTemplateTh, payment: !terms?.length, spec: !hasSpec },
   };
 }

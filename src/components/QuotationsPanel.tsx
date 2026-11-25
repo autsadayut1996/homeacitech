@@ -20,6 +20,7 @@ export function QuotationsPanel({ projectId, quotes, hasVersion, priceFinal, loc
   const t = useTranslations("quotes");
   const router = useRouter();
   const [lang, setLang] = useState<"th" | "en">(locale);
+  const [sales, setSales] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const baht = (n: number) => `฿${n.toLocaleString(locale === "th" ? "th-TH" : "en-US", { maximumFractionDigits: 0 })}`;
@@ -27,6 +28,7 @@ export function QuotationsPanel({ projectId, quotes, hasVersion, priceFinal, loc
     <div className="card space-y-3" data-testid="quotations">
       <div className="flex flex-wrap items-center gap-2">
         <p className="mr-auto font-semibold">{t("title")}</p>
+        <input className="input w-44 py-1.5" placeholder={t("salesperson")} value={sales} onChange={(e) => setSales(e.target.value)} data-testid="salesperson" />
         <select className="input w-auto py-1.5" value={lang} onChange={(e) => setLang(e.target.value as "th" | "en")}>
           <option value="th">ภาษาไทย</option>
           <option value="en">English</option>
@@ -37,7 +39,7 @@ export function QuotationsPanel({ projectId, quotes, hasVersion, priceFinal, loc
           onClick={() =>
             start(async () => {
               setError(null);
-              const r = await createQuotation(projectId, lang);
+              const r = await createQuotation(projectId, lang, { salesperson: sales });
               if (r.ok) router.push(`/quotations/${r.quotationId}`);
               else setError(r.error[locale]);
             })

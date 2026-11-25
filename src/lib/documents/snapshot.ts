@@ -25,6 +25,19 @@ export interface QuoteSnapshot {
   terms: string;
   contractTemplate: string;
   priceReference: string;
+  /** Reference-format quotation (cover letter → notes → plans → specification). Absent on old snapshots. */
+  letter?: {
+    formCode: string | null;
+    salesperson: string | null;
+    introTh: string;
+    introEn: string;
+    closingTh: string;
+    closingEn: string;
+    notesTh: string[];
+    notesEn: string[];
+  };
+  specSections?: { titleTh: string; titleEn: string; items: { th: string; en: string; specTh: string; specEn: string }[] }[];
+  levelAreas?: { nameTh: string; nameEn: string; indoor: number; outdoor: number; total: number }[];
 }
 
 export interface Money {
@@ -34,14 +47,24 @@ export interface Money {
   vatPct: number;
   vat: number;
   total: number;
+  /** Prices already included VAT: `vat` is the part of `total` that is tax. */
+  vatIncluded?: boolean;
 }
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
-/** Subtotal (before VAT) → discount → VAT → total. */
-export function computeMoney(subtotal: number, discount: number, vatPct: number): Money {
+/**
+ * Subtotal → discount → VAT → total.
+ * With `vatIncluded` the subtotal is a VAT-inclusive selling price: the total is the price after
+ * discount and the VAT shown is the tax contained in it.
+ */
+export function computeMoney(subtotal: number, discount: number, vatPct: number, vatIncluded = false): Money {
   const d = Math.min(Math.max(0, discount), subtotal);
   const afterDiscount = r2(subtotal - d);
+  if (vatIncluded) {
+    const vat = r2((afterDiscount * vatPct) / (100 + vatPct));
+    return { subtotal: r2(subtotal), discount: r2(d), afterDiscount, vatPct, vat, total: afterDiscount, vatIncluded: true };
+  }
   const vat = r2((afterDiscount * vatPct) / 100);
   return { subtotal: r2(subtotal), discount: r2(d), afterDiscount, vatPct, vat, total: r2(afterDiscount + vat) };
 }
@@ -61,6 +84,14 @@ export function validatePaymentTerms(terms: PaymentTerm[]): string | null {
   if (terms.some((t) => !t.labelTh.trim() || !(t.pct > 0))) return "every instalment needs a label and a percentage > 0";
   const sum = terms.reduce((s, t) => s + t.pct, 0);
   return Math.abs(sum - 100) > 1e-6 ? `percentages add up to ${sum}, not 100` : null;
+}
+
+/** Split a multi-line note field into items, dropping blank lines and leading "1." numbering. */
+export function noteLines(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((l) => l.replace(/^\s*(\d+[.)]|[-•*])\s*/, "").trim())
+    .filter(Boolean);
 }
 
 /** Fill {{placeholders}} in a contract template. Unknown placeholders are left visible. */

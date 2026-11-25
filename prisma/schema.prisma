@@ -255,6 +255,17 @@ model CompanySettings {
   paymentTerms       Json?
   quoteTermsTh       String?
   quoteTermsEn       String?
+  /// Form / document code printed top-right on quotations (e.g. "QF-01").
+  quoteFormCode      String?
+  /// Prices in the system exclude VAT; true = quote the price including VAT (one "Price" line).
+  priceIncludesVat   Boolean @default(true)
+  /// Cover-letter paragraphs (blank = built-in default).
+  quoteIntroTh       String?
+  quoteIntroEn       String?
+  quoteClosingTh     String?
+  quoteClosingEn     String?
+  /// Specification (รายการวัสดุประกอบอาคาร): [{ titleTh, titleEn, items: [{ th, en, specTh, specEn, slot? }] }]
+  specTemplate       Json?
   /// Contract body with {{placeholders}} — content is defined by the company's legal team.
   contractTemplateTh String?
   contractTemplateEn String?

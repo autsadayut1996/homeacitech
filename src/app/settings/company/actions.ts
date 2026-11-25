@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { validatePaymentTerms } from "@/lib/documents/snapshot";
 import type { PaymentTerm } from "@/lib/documents/defaults";
+import { SpecTemplateSchema, type SpecSection } from "@/lib/documents/spec";
 
 export interface CompanyInput {
   nameTh: string;
@@ -23,6 +24,13 @@ export interface CompanyInput {
   quoteTermsEn: string;
   contractTemplateTh: string;
   contractTemplateEn: string;
+  quoteFormCode: string;
+  priceIncludesVat: boolean;
+  quoteIntroTh: string;
+  quoteIntroEn: string;
+  quoteClosingTh: string;
+  quoteClosingEn: string;
+  specTemplate: SpecSection[];
 }
 
 export async function saveCompany(input: CompanyInput): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -33,6 +41,12 @@ export async function saveCompany(input: CompanyInput): Promise<{ ok: true } | {
   if (!(input.quoteValidityDays >= 1 && input.quoteValidityDays <= 365)) return { ok: false, error: "quoteValidityDays: 1–365" };
   if (!(input.salesDiscountLimitPct >= 0 && input.salesDiscountLimitPct <= 50)) return { ok: false, error: "salesDiscountLimitPct: 0–50" };
   if (input.logo && (!/^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(input.logo) || input.logo.length > 600_000)) return { ok: false, error: "logo: PNG/JPEG/WebP/SVG up to ~400 KB" };
+  const spec = SpecTemplateSchema.safeParse(
+    input.specTemplate
+      .map((sec) => ({ ...sec, titleTh: sec.titleTh.trim(), items: sec.items.filter((it) => it.th.trim()) }))
+      .filter((sec) => sec.titleTh),
+  );
+  if (!spec.success) return { ok: false, error: `specTemplate: ${spec.error.issues[0]?.message ?? "invalid"}` };
   const opt = (s: string) => s.trim() || null;
   const data = {
     nameTh: input.nameTh.trim(),
@@ -51,6 +65,13 @@ export async function saveCompany(input: CompanyInput): Promise<{ ok: true } | {
     quoteTermsEn: opt(input.quoteTermsEn),
     contractTemplateTh: opt(input.contractTemplateTh),
     contractTemplateEn: opt(input.contractTemplateEn),
+    quoteFormCode: opt(input.quoteFormCode),
+    priceIncludesVat: input.priceIncludesVat,
+    quoteIntroTh: opt(input.quoteIntroTh),
+    quoteIntroEn: opt(input.quoteIntroEn),
+    quoteClosingTh: opt(input.quoteClosingTh),
+    quoteClosingEn: opt(input.quoteClosingEn),
+    specTemplate: spec.data as unknown as Prisma.InputJsonValue,
   };
   await db.companySettings.upsert({ where: { id: "default" }, create: { id: "default", ...data }, update: data });
   revalidatePath("/settings/company");

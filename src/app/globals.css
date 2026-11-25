@@ -111,6 +111,60 @@ body {
   color: rgb(220 38 38 / 0.13);
   white-space: nowrap;
 }
+/* multi-page quotation */
+.doc-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8mm;
+}
+.doc-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 297mm;
+  width: 100%;
+}
+.doc-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #d4d4d4;
+  font-size: 10px;
+  color: #737373;
+}
+.doc-h2 {
+  margin: 6px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.doc-paper table.doc-plain td {
+  border: 0;
+}
+.doc-spec td {
+  font-size: 11.5px;
+}
+.doc-spec tr.doc-spec-head td {
+  background: #ececec;
+  padding-top: 5px;
+}
+.doc-spec tr {
+  break-inside: avoid;
+}
+@media print {
+  .doc-stack {
+    gap: 0;
+  }
+  .doc-page {
+    min-height: 272mm;
+    break-after: page;
+  }
+  .doc-page:last-child {
+    break-after: auto;
+  }
+  .doc-spec thead {
+    display: table-header-group;
+  }
+}
 @media print {
   @page {
     size: A4;

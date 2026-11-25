@@ -8,7 +8,8 @@ import { PlanSchema, computeMetrics } from "@/lib/plan-core";
 import { loadCatalog } from "@/lib/pricing/catalog";
 import { estimate } from "@/lib/pricing/materials";
 import { getCompany } from "@/lib/documents/company";
-import { computeMoney, splitInstallments, type QuoteSnapshot } from "@/lib/documents/snapshot";
+import { computeMoney, noteLines, splitInstallments, type QuoteSnapshot } from "@/lib/documents/snapshot";
+import { resolveSpec } from "@/lib/documents/spec";
 import { latestVersion } from "@/lib/versions";
 import { priceIsApproved, type Status } from "@/lib/workflow";
 
@@ -24,7 +25,7 @@ const SLOT_TH: Record<string, string> = { roof: "หลังคา", exterior_w
 const SLOT_EN: Record<string, string> = { roof: "Roof", exterior_wall: "Exterior walls", interior_wall: "Interior walls", floor: "Flooring", ceiling: "Ceiling", window: "Windows", door: "Doors", sanitary: "Sanitary ware", kitchen: "Kitchen" };
 
 /** Issue a quotation for the project's latest version. Everything printed is frozen in `snapshot`. */
-export async function createQuotation(projectId: string, locale: "th" | "en"): Promise<QuoteResult> {
+export async function createQuotation(projectId: string, locale: "th" | "en", opts: { salesperson?: string } = {}): Promise<QuoteResult> {
   const project = await db.project.findUnique({ where: { id: projectId }, include: { customer: true, brief: true, approvals: true } });
   if (!project) return { ok: false, error: { th: "ไม่พบโปรเจกต์", en: "Project not found" } };
   const version = await latestVersion(projectId);
@@ -54,7 +55,7 @@ export async function createQuotation(projectId: string, locale: "th" | "en"): P
       amount: Math.round(l.delta),
     })),
   ];
-  const money = computeMoney(est.total, discount, company.vatPct);
+  const money = computeMoney(est.total, discount, company.vatPct, company.priceIncludesVat);
   const issuedAt = new Date();
   const validUntil = new Date(issuedAt.getTime() + company.quoteValidityDays * 86400_000);
   const th = locale === "th";
@@ -66,6 +67,10 @@ export async function createQuotation(projectId: string, locale: "th" | "en"): P
   ]
     .filter(Boolean)
     .join(" · ");
+
+  const location = land.success ? [land.data.district, land.data.province].filter(Boolean).join(", ") || "-" : "-";
+  const chosen = Object.fromEntries(est.lines.filter((l) => l.material).map((l) => [l.slot, { nameTh: l.material!.nameTh, nameEn: l.material!.nameEn }]));
+  const fillLoc = (text: string) => text.replaceAll("{location}", location);
 
   const number = await nextQuoteNumber();
   const snapshot: QuoteSnapshot = {
@@ -79,7 +84,7 @@ export async function createQuotation(projectId: string, locale: "th" | "en"): P
     project: {
       code: project.code,
       title: project.title,
-      location: land.success ? [land.data.district, land.data.province].filter(Boolean).join(", ") : "-",
+      location,
       buildingType: req.success ? req.data.buildingType : null,
       style: req.success ? req.data.style : null,
     },
@@ -103,6 +108,24 @@ export async function createQuotation(projectId: string, locale: "th" | "en"): P
     terms: th ? company.quoteTermsTh : company.quoteTermsEn,
     contractTemplate: th ? company.contractTemplateTh : company.contractTemplateEn,
     priceReference,
+    letter: {
+      formCode: company.quoteFormCode,
+      salesperson: opts.salesperson?.trim() || null,
+      introTh: fillLoc(company.quoteIntroTh),
+      introEn: fillLoc(company.quoteIntroEn),
+      closingTh: company.quoteClosingTh,
+      closingEn: company.quoteClosingEn,
+      notesTh: noteLines(company.quoteTermsTh),
+      notesEn: noteLines(company.quoteTermsEn),
+    },
+    specSections: resolveSpec(company.specTemplate, chosen),
+    levelAreas: plan.data.levels.map((l, i) => ({
+      nameTh: l.name.th,
+      nameEn: l.name.en,
+      indoor: m.levels[i].indoorAreaM2,
+      outdoor: m.levels[i].outdoorAreaM2,
+      total: m.levels[i].totalAreaM2,
+    })),
   };
 
   const q = await db.quotation.create({

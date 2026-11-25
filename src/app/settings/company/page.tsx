@@ -32,6 +32,13 @@ export default async function CompanySettingsPage() {
           quoteTermsEn: c.quoteTermsEn,
           contractTemplateTh: c.contractTemplateTh,
           contractTemplateEn: c.contractTemplateEn,
+          quoteFormCode: c.quoteFormCode ?? "",
+          priceIncludesVat: c.priceIncludesVat,
+          quoteIntroTh: c.quoteIntroTh,
+          quoteIntroEn: c.quoteIntroEn,
+          quoteClosingTh: c.quoteClosingTh,
+          quoteClosingEn: c.quoteClosingEn,
+          specTemplate: c.specTemplate,
         }}
       />
     </div>
