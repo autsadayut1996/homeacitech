@@ -336,7 +336,7 @@ export function planToDxf(plan: Plan, opts: DxfOptions = {}): string {
   plan.levels.forEach((level, li) => drawLevel(w, plan, level, li, [li * (sb.width + gap) - sb.minX, -sb.minY], locale));
 
   // elevations in a row below the floor plans
-  const ELEV_LAYER = { wall: "A-ELEV", roof: "A-ELEV", ground: "A-ELEV", opening: "A-ELEV-OPNG", glass: "A-ELEV-OPNG", railing: "A-ELEV-OPNG", level: "A-ELEV-DIMS", dim: "A-ELEV-DIMS" } as const;
+  const ELEV_LAYER = { wall: "A-ELEV", roof: "A-ELEV", ground: "A-ELEV", cut: "A-ELEV", opening: "A-ELEV-OPNG", glass: "A-ELEV-OPNG", railing: "A-ELEV-OPNG", level: "A-ELEV-DIMS", dim: "A-ELEV-DIMS" } as const;
   const SIDE_TH = { front: "รูปด้านหน้า", back: "รูปด้านหลัง", left: "รูปด้านซ้าย", right: "รูปด้านขวา" } as const;
   const SIDE_EN = { front: "Front elevation", back: "Rear elevation", left: "Left elevation", right: "Right elevation" } as const;
   const elevTop = -14;

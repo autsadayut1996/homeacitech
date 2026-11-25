@@ -9,6 +9,7 @@ const STYLE: Record<LineKind, { stroke: string; width: number; dash?: string }> 
   ground: { stroke: "var(--ink)", width: 0.1 },
   level: { stroke: "var(--muted)", width: 0.025 },
   dim: { stroke: "var(--muted)", width: 0.025 },
+  cut: { stroke: "var(--ink)", width: 0.1 },
 };
 
 /** Line drawing of one elevation (z up). Server-renderable; used on the project page and quotations. */
@@ -26,6 +27,9 @@ export function ElevationSvg({ e, title, className }: { e: Elevation; title?: st
           {title}
         </text>
       )}
+      {e.fills?.map((poly, i) => (
+        <polygon key={`f${i}`} points={poly.map((p) => `${X(p[0])},${Y(p[1])}`).join(" ")} fill="var(--ink)" fillOpacity={0.85} />
+      ))}
       {e.lines.map((l, i) => {
         const s = STYLE[l.kind];
         return <line key={i} x1={X(l.a[0])} y1={Y(l.a[1])} x2={X(l.b[0])} y2={Y(l.b[1])} stroke={s.stroke} strokeWidth={s.width} strokeDasharray={s.dash} strokeLinecap="round" />;

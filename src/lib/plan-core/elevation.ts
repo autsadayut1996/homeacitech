@@ -21,7 +21,7 @@ export const ELEVATION_SIDES: ElevationSide[] = ["front", "right", "back", "left
 /** Direction the viewer looks in (plan frame). Front = standing on the road side (y < 0) looking +y. */
 const VIEW: Record<ElevationSide, Point> = { front: [0, 1], back: [0, -1], left: [1, 0], right: [-1, 0] };
 
-export type LineKind = "wall" | "opening" | "glass" | "roof" | "railing" | "ground" | "level" | "dim";
+export type LineKind = "wall" | "opening" | "glass" | "roof" | "railing" | "ground" | "level" | "dim" | "cut";
 
 export interface ElevationLine {
   a: [number, number];
@@ -46,6 +46,8 @@ export interface Elevation {
   bounds: { minU: number; maxU: number; minZ: number; maxZ: number };
   /** Highest point of the roof above ground. */
   topZ: number;
+  /** Filled areas (cut walls / slabs in sections), as [u, z] polygons. */
+  fills?: [number, number][][];
 }
 
 const COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
