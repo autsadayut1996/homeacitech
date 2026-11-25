@@ -33,6 +33,13 @@ import {
   signedArea,
   toSite,
   uniqSorted,
+  columns,
+  fmtLevel,
+  openingMarks,
+  openingMarkPosition,
+  plinthOf,
+  roomTag,
+  structuralGrid,
 } from "@/lib/plan-core";
 
 export const LAYERS = {
@@ -56,6 +63,10 @@ export const LAYERS = {
   "P-FIXT": { color: 5, ltype: "CONTINUOUS", th: "สุขาภิบาล: สุขภัณฑ์ ถังบำบัด" },
   "P-SANR": { color: 34, ltype: "CONTINUOUS", th: "สุขาภิบาล: ท่อน้ำทิ้ง (แนวโดยประมาณ)" },
   "P-DOMW": { color: 4, ltype: "DASHED", th: "สุขาภิบาล: ท่อน้ำดี (แนวโดยประมาณ)" },
+  "S-GRID": { color: 1, ltype: "DASHED", th: "เส้นกริดโครงสร้าง" },
+  "S-GRID-IDEN": { color: 1, ltype: "CONTINUOUS", th: "หัวกริด (วงกลม/เลข)" },
+  "S-COLS": { color: 7, ltype: "CONTINUOUS", th: "เสา (ตำแหน่ง)" },
+  "A-TAGS": { color: 3, ltype: "CONTINUOUS", th: "ป้ายห้อง (F/C/ระดับ) รหัสประตู-หน้าต่าง" },
   "C-PROP": { color: 3, ltype: "CONTINUOUS", th: "แนวเขตที่ดิน" },
   "C-SETB": { color: 1, ltype: "DASHED", th: "เส้นระยะร่น" },
   "C-ROAD": { color: 8, ltype: "CONTINUOUS", th: "ถนน" },
@@ -341,9 +352,49 @@ function drawLevel(w: Writer, plan: Plan, level: Level, li: number, off: Point, 
     dim([x0 - 1.8, ys[0]], [x0 - 1.8, ys[ys.length - 1]], (ys[ys.length - 1] - ys[0]).toFixed(2), true);
   }
 
+  // structural grid, columns, room tags, door / window marks
+  const grid = structuralGrid(plan);
+  const gb = grid.bounds;
+  const G = 3.2;
+  for (const a of grid.x) {
+    w.line("S-GRID", S([a.at, gb.minY - G + 0.4]), S([a.at, gb.maxY + G - 0.4]));
+    for (const y of [gb.minY - G, gb.maxY + G]) {
+      w.circle("S-GRID-IDEN", S([a.at, y]), 0.4);
+      w.text("S-GRID-IDEN", S([a.at, y]), 0.35, a.label);
+    }
+  }
+  for (const a of grid.y) {
+    w.line("S-GRID", S([gb.minX - G + 0.4, a.at]), S([gb.maxX + G - 0.4, a.at]));
+    for (const x of [gb.minX - G, gb.maxX + G]) {
+      w.circle("S-GRID-IDEN", S([x, a.at]), 0.4);
+      w.text("S-GRID-IDEN", S([x, a.at]), 0.35, a.label);
+    }
+  }
+  for (const c of columns(plan, li, grid)) {
+    const q = ([[-0.1, -0.1], [0.1, -0.1], [0.1, 0.1], [-0.1, 0.1]] as Point[]).map((d) => S(add(c, d)));
+    w.solid("S-COLS", [q[0], q[1], q[2], q[3]]);
+  }
+  for (const r of level.rooms) {
+    if (r.type === "pool" || r.type === "stair") continue;
+    const t = roomTag(plan, level, r);
+    const tag = [t.floorCode, fmtLevel(t.floorLevel), ...(t.ceilingCode ? [t.ceilingCode, `+${t.ceilingHeight!.toFixed(2)}`] : [])].join(" | ");
+    const c = add(centroid(r.polygon.map(S)), [0, -0.75]);
+    const hw = tag.length * 0.06;
+    w.poly("A-TAGS", [add(c, [-hw, -0.16]), add(c, [hw, -0.16]), add(c, [hw, 0.16]), add(c, [-hw, 0.16])]);
+    w.text("A-TAGS", c, 0.15, tag);
+  }
+  const marks = openingMarks(plan);
+  for (const o of level.openings) {
+    const code = marks.codes[o.id];
+    const at = code && openingMarkPosition(level, o);
+    if (!at) continue;
+    w.circle("A-TAGS", S(at), 0.2);
+    w.text("A-TAGS", S(at), 0.14, code);
+  }
+
   // floor title and north arrow
   const sb = bbox(site.boundary);
-  w.text("A-ANNO", add([sb.minX, sb.maxY + 1.6], off), 0.5, `${level.name[locale]}  (${locale === "th" ? "ระดับ" : "level"} +${level.elevationM.toFixed(2)})`, 0, "left");
+  w.text("A-ANNO", add([sb.minX, sb.maxY + 1.6], off), 0.5, `${level.name[locale]}  (${locale === "th" ? "ระดับพื้น" : "FFL"} ${fmtLevel(level.elevationM + plinthOf(plan))})`, 0, "left");
   const t = (site.northAngleDeg * Math.PI) / 180;
   const north: Point = [Math.sin(t), Math.cos(t)];
   const nc = add([sb.maxX + 2, sb.maxY], off);

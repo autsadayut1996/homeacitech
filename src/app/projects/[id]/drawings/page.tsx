@@ -2,13 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { LandSchema } from "@/lib/brief";
-import { ELECTRICAL, SANITARY, PlanSchema, elevations, mepLayout, section } from "@/lib/plan-core";
+import { ELECTRICAL, SANITARY, PlanSchema, elevations, mepLayout, openingMarks, section } from "@/lib/plan-core";
 import { getCompany } from "@/lib/documents/company";
 import { licensedApproval, type ApprovalLike } from "@/lib/workflow";
 import { SitePlanSvg, siteSvgFrame } from "@/components/SitePlanSvg";
 import { ElevationSvg } from "@/components/ElevationSvg";
 import { Drawing, Sheet, AREA, fitScale, type TitleInfo } from "@/components/drawings/Sheet";
-import { ChainDims, MepOverlay, RoofPlanOverlay, SectionMarks } from "@/components/drawings/overlays";
+import { GridOverlay, MepOverlay, PlanTags, RoofPlanOverlay, SectionMarks, buildingCrop } from "@/components/drawings/overlays";
+import { FinishLegend, OpeningSchedule } from "@/components/drawings/Schedules";
 import { MepLegend } from "@/components/drawings/MepLegend";
 import { PrintButton } from "@/components/drawings/PrintButton";
 
@@ -73,17 +74,22 @@ export default async function DrawingsPage({ params, searchParams }: { params: P
   const elevSize = (e: (typeof elevs)[number]) => ({ width: ((e.bounds.maxU - e.bounds.minU) * 1000) / tallest, height: ((e.bounds.maxZ - e.bounds.minZ) * 1000) / tallest });
   const mep = mepLayout(plan);
   const planStyle = { width: `${plan$.width}mm`, height: `${plan$.height}mm` };
+  // floor plans: the building alone, at a construction-drawing scale (1:75 / 1:100 where it fits)
+  const crop = buildingCrop(plan);
+  const floor$ = fitScale(crop.w, crop.h, AREA.w - 70, AREA.h - 12);
+  const floorStyle = { width: `${floor$.width}mm`, height: `${floor$.height}mm` };
+  const marks = openingMarks(plan);
 
   type SheetDef = { number: string; th: string; en: string; body: React.ReactNode };
   const sheets: SheetDef[] = [];
-  const planSheet = (number: string, th: string, en: string, svg: React.ReactNode, legend?: React.ReactNode) =>
+  const planSheet = (number: string, th: string, en: string, svg: React.ReactNode, legend?: React.ReactNode, scale = plan$.scale) =>
     sheets.push({
       number,
       th,
       en,
       body: (
         <>
-          <Drawing x={0} y={0} title={th} scale={plan$.scale}>
+          <Drawing x={0} y={0} title={th} scale={scale}>
             {svg}
           </Drawing>
           {legend && <div style={{ position: "absolute", right: 0, top: 0 }}>{legend}</div>}
@@ -95,12 +101,15 @@ export default async function DrawingsPage({ params, searchParams }: { params: P
   plan.levels.forEach((l, i) =>
     planSheet(
       `A-${String(i + 2).padStart(2, "0")}`,
-      `ผังพื้น${l.name.th}`,
+      `แปลนพื้น${l.name.th}`,
       `${l.name.en.toUpperCase()} PLAN`,
-      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" style={planStyle}>
-        <ChainDims plan={plan} levelIndex={i} />
+      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" style={floorStyle} crop={crop} roomAreas={false}>
+        <GridOverlay plan={plan} levelIndex={i} />
+        <PlanTags plan={plan} levelIndex={i} marks={marks} />
         <SectionMarks plan={plan} />
       </SitePlanSvg>,
+      <FinishLegend />,
+      floor$.scale,
     ),
   );
   for (const [k, pair] of [elevs.filter((e) => e.side === "front" || e.side === "back"), elevs.filter((e) => e.side === "left" || e.side === "right")].entries()) {
@@ -129,19 +138,30 @@ export default async function DrawingsPage({ params, searchParams }: { params: P
     "A-30",
     "ผังหลังคา",
     "ROOF PLAN",
-    <SitePlanSvg site={plan.site} plan={plan} levelIndex={plan.levels.length - 1} locale="th" showRooms={false} style={planStyle}>
+    <SitePlanSvg site={plan.site} plan={plan} levelIndex={plan.levels.length - 1} locale="th" showRooms={false} style={floorStyle} crop={crop}>
+      <GridOverlay plan={plan} levelIndex={plan.levels.length - 1} />
       <RoofPlanOverlay plan={plan} />
     </SitePlanSvg>,
+    undefined,
+    floor$.scale,
   );
+  sheets.push({
+    number: "A-40",
+    th: "ตารางประตู-หน้าต่าง",
+    en: "DOOR & WINDOW SCHEDULE",
+    body: <OpeningSchedule schedule={marks.schedule} />,
+  });
   plan.levels.forEach((l, i) =>
     planSheet(
       `E-${String(i + 1).padStart(2, "0")}`,
       `ผังไฟฟ้า${l.name.th}`,
       `${l.name.en.toUpperCase()} ELECTRICAL PLAN`,
-      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" muted style={planStyle}>
+      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" muted style={floorStyle} crop={crop}>
+        <GridOverlay plan={plan} levelIndex={i} />
         <MepOverlay plan={plan} layout={mep} levelId={l.id} kinds={ELECTRICAL} showRuns={false} />
       </SitePlanSvg>,
       <MepLegend layout={mep} levelId={l.id} kinds={ELECTRICAL} pipes={false} />,
+      floor$.scale,
     ),
   );
   plan.levels.forEach((l, i) =>
@@ -149,10 +169,12 @@ export default async function DrawingsPage({ params, searchParams }: { params: P
       `S-${String(i + 1).padStart(2, "0")}`,
       `ผังสุขาภิบาล${l.name.th}`,
       `${l.name.en.toUpperCase()} SANITARY PLAN`,
-      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" muted style={planStyle}>
+      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" muted style={floorStyle} crop={crop}>
+        <GridOverlay plan={plan} levelIndex={i} />
         <MepOverlay plan={plan} layout={mep} levelId={l.id} kinds={SANITARY} showRuns />
       </SitePlanSvg>,
       <MepLegend layout={mep} levelId={l.id} kinds={SANITARY} pipes />,
+      floor$.scale,
     ),
   );
 
@@ -183,7 +205,8 @@ export default async function DrawingsPage({ params, searchParams }: { params: P
         <div>
           <div style={{ fontWeight: 700, borderBottom: "0.3mm solid #111", marginBottom: "1mm" }}>หมายเหตุทั่วไป / GENERAL NOTES</div>
           <ol style={{ paddingLeft: "5mm", margin: 0 }}>
-            <li>ขนาดในแบบเป็นเมตร วัดถึงแนวศูนย์กลางผนัง ระดับอ้างอิง ±0.00 = ระดับพื้นชั้น 1</li>
+            <li>ขนาดในแบบเป็นเมตร วัดถึงแนวศูนย์กลางผนัง/แนวเส้นกริดโครงสร้าง ระดับอ้างอิง ±0.00 = ระดับถนน/ดินเดิม พื้นชั้น 1 = {`+${(plan.building.plinthM ?? 0.5).toFixed(2)}`}</li>
+            <li>รหัสห้อง F = วัสดุพื้น, C = ฝ้าเพดาน ตามด้วยระดับพื้นและความสูงฝ้า รายละเอียดวัสดุตามรายการประกอบแบบ · D = ประตู, W = หน้าต่าง ดูตารางประตู-หน้าต่าง (A-40)</li>
             <li>แบบชุดนี้จัดทำจากแบบร่างเพื่อการขาย ผู้ออกแบบต้องตรวจสอบและแก้ไขก่อนลงนาม</li>
             <li>งานโครงสร้าง ไฟฟ้า และสุขาภิบาล ต้องออกแบบและคำนวณโดยวิศวกรผู้มีใบอนุญาต ผังไฟฟ้า/สุขาภิบาลในชุดนี้เป็นแนวคิดเบื้องต้นเท่านั้น</li>
             <li>ระยะร่นและข้อกำหนดตามกฎหมายเป็นการตรวจเบื้องต้นของระบบ ต้องตรวจสอบกับข้อบัญญัติท้องถิ่นที่ใช้บังคับ</li>

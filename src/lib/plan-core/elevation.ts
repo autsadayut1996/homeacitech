@@ -14,6 +14,7 @@ import { ROOM_TYPE_INFO, type Level, type Plan, type Room } from "./schema";
 import { deriveWalls } from "./walls";
 import { layoutWall } from "./wallsegments";
 import { roofMesh, roofParts } from "./roof";
+import { fmtLevel, plinthOf } from "./annotate";
 
 export type ElevationSide = "front" | "back" | "left" | "right";
 export const ELEVATION_SIDES: ElevationSide[] = ["front", "right", "back", "left"];
@@ -89,9 +90,11 @@ export function elevation(plan: Plan, side: ElevationSide): Elevation {
       return s.d1 <= atDepth + TOL && Math.min(u1, s.u1) - Math.max(u0, s.u0) > 0.05 && s.u0 <= u0 + TOL && s.u1 >= u1 - TOL;
     });
 
+  const pz = plinthOf(plan); // the building stands on a plinth above ±0.00 (road / existing ground)
   for (const level of plan.levels) {
-    const z0 = level.elevationM;
+    const z0 = level.elevationM + pz;
     const z1 = z0 + level.floorToFloorM;
+    const base = level === plan.levels[0] ? 0 : z0; // ground-floor walls run down to the ground
     for (const w of deriveWalls(plan, level)) {
       if (w.kind !== "exterior") continue;
       const lay = layoutWall(level, w);
@@ -107,7 +110,8 @@ export function elevation(plan: Plan, side: ElevationSide): Elevation {
       const ub = U(w.b);
       const [u0, u1] = [Math.min(ua, ub), Math.max(ua, ub)];
       if (hidden(level, u0, u1, wallDepth, w.roomIds)) continue;
-      rect(u0, u1, z0, z1, "wall");
+      rect(u0, u1, base, z1, "wall");
+      if (base < z0) add([u0, z0], [u1, z0], "level"); // finished floor line of the plinth
       for (const o of lay.openings) {
         const pa: Point = lay.horizontal ? [o.a, lay.fixed] : [lay.fixed, o.a];
         const pb: Point = lay.horizontal ? [o.b, lay.fixed] : [lay.fixed, o.b];
@@ -123,28 +127,28 @@ export function elevation(plan: Plan, side: ElevationSide): Elevation {
     // railings of balconies / upper terraces, carport posts
     for (const r of level.rooms) {
       const s = roomSpan(r);
-      if ((r.type === "balcony" || (r.type === "terrace" && z0 > 0)) && !hidden(level, s.u0, s.u1, s.d0)) {
+      if ((r.type === "balcony" || (r.type === "terrace" && level.elevationM > 0)) && !hidden(level, s.u0, s.u1, s.d0)) {
         rect(s.u0, s.u1, z0, z0 + 1.0, "railing");
       }
       if (r.type === "garage" && level === plan.levels[0] && !hidden(level, s.u0, s.u1, s.d0)) {
-        rect(s.u0, s.u0 + 0.2, z0, z1, "wall");
-        rect(s.u1 - 0.2, s.u1, z0, z1, "wall");
+        rect(s.u0, s.u0 + 0.2, base, z1, "wall");
+        rect(s.u1 - 0.2, s.u1, base, z1, "wall");
       }
     }
   }
 
   // roof: project every edge of the 3D roof surfaces
-  let topZ = plan.levels.reduce((h, l) => Math.max(h, l.elevationM + l.floorToFloorM), 0);
+  let topZ = plan.levels.reduce((h, l) => Math.max(h, l.elevationM + l.floorToFloorM), 0) + pz;
   for (const part of roofParts(plan)) {
     const mesh = roofMesh(part);
     for (const f of mesh.faces) {
       f.forEach((vi, i) => {
         const p = mesh.vertices[vi];
         const q = mesh.vertices[f[(i + 1) % f.length]];
-        add([U([p[0], p[1]]), p[2]], [U([q[0], q[1]]), q[2]], "roof");
+        add([U([p[0], p[1]]), p[2] + pz], [U([q[0], q[1]]), q[2] + pz], "roof");
       });
     }
-    topZ = Math.max(topZ, ...mesh.vertices.map((v) => v[2]));
+    topZ = Math.max(topZ, ...mesh.vertices.map((v) => v[2] + pz));
   }
 
   // extents of what was drawn
@@ -157,12 +161,12 @@ export function elevation(plan: Plan, side: ElevationSide): Elevation {
   add([minU - 2, 0], [maxU + 2, 0], "ground");
   const markU = minU - 1.2;
   const top = plan.levels[plan.levels.length - 1];
-  const levelMarks = [...plan.levels.map((l) => ({ z: l.elevationM })), { z: top.elevationM + top.floorToFloorM }];
+  const levelMarks = [{ z: 0 }, ...plan.levels.map((l) => ({ z: l.elevationM + pz })), { z: top.elevationM + top.floorToFloorM + pz }].filter((m, i, a) => i === 0 || m.z - a[i - 1].z > 0.05);
   for (const m of levelMarks) {
     add([markU - 0.4, m.z], [minU, m.z], "level");
     add([markU - 0.15, m.z + 0.25], [markU, m.z], "level");
     add([markU, m.z], [markU + 0.15, m.z + 0.25], "level");
-    texts.push({ at: [markU - 0.5, m.z + 0.12], text: `${m.z >= 0 ? "+" : ""}${m.z.toFixed(2)}`, anchor: "end", size: 0.3 });
+    texts.push({ at: [markU - 0.5, m.z + 0.12], text: fmtLevel(m.z), anchor: "end", size: 0.3 });
   }
   const dimU = maxU + 1.2;
   add([dimU, 0], [dimU, topZ], "dim");

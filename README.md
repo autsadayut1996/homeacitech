@@ -92,9 +92,11 @@ Front / rear / left / right elevations are generated from the plan (`src/lib/pla
 
 ## Drawing set (A3) — phase 2, pulled forward
 `/projects/:id/drawings?v=<versionId>` — A3 landscape sheets printed at true scale (one scale for all plans, one for elevations/sections), each with frame and title block (company, project, signature boxes for architect / civil / electrical / sanitary engineer / owner, sheet number, version, date):
-A-00 index + general notes + submission checklist (sample), A-01 site plan, A-02… floor plans with chain dimensions and section lines, A-10/A-11 elevations, A-20 sections A-A/B-B (`section.ts`), A-30 roof plan (`roofplan.ts`), E-0x electrical and S-0x sanitary plans with legends.
+A-00 index + general notes + submission checklist (sample), A-01 site plan, A-02… floor plans cropped to the building (1:75 / 1:100) with structural grid axes 1..n / A.. and bubbles, grid dimension chains, columns at grid intersections, room tags `F1 | +0.50 | C1 | +2.80` (floor finish, finished floor level, ceiling, ceiling height), door / window marks D1… / W1…, "ขึ้น" stair arrow and section lines, A-40 door & window schedule (1:50 sketches, sizes, quantities), A-10/A-11 elevations, A-20 sections A-A/B-B (`section.ts`), A-30 roof plan (`roofplan.ts`), E-0x electrical and S-0x sanitary plans with legends.
 - Electrical / sanitary layouts are generated from room types (`mep.ts`) — preliminary concepts only; licensed engineers design the real systems.
 - Watermark "ร่าง — ยังไม่ผ่านการรับรอง" until a licensed architect AND engineer approved that version; their names and licence numbers then appear in the title block.
+- Levels: ±0.00 = road / existing ground; the ground floor stands on a plinth (`building.plinthM`, default 0.50 m), shown on elevations, sections and room tags (`src/lib/plan-core/annotate.ts`).
+- The DXF also has `S-GRID`, `S-GRID-IDEN`, `S-COLS` and `A-TAGS` layers.
 - The DXF contains the same content (roof plan, sections, `E-LITE`/`E-POWR`/`P-FIXT`/`P-SANR`/`P-DOMW` layers).
 
 ## DXF export for AutoCAD (phase 2, pulled forward)
@@ -108,10 +110,15 @@ A-00 index + general notes + submission checklist (sample), A-01 site plan, A-02
 ## Quotations & contracts (M9)
 - Project page → "ออกใบเสนอราคา" (Thai or English). Each quotation gets a number (QT-YYYY-NNNN) and a **snapshot** of everything printed, so issued documents never change.
 - `/quotations/:id` and `/quotations/:id/contract`: A4 print layouts — "พิมพ์ / บันทึกเป็น PDF" uses the browser's Save-as-PDF, which renders Thai perfectly and needs no server-side PDF engine on Vercel.
-- Content: logo/company, customer & project, floor plans, specification, price lines (base + material upgrades), discount, VAT, total in words (Thai/English), payment instalments, terms, price-base reference and date, sales-draft disclaimer, signature boxes.
+- Standard Thai home-builder format, bilingual on every line (issuing language first):
+  1. cover letter — form code, date, QT No., client, subject, enclosures, intro, model / usable area / location / land, price / discount / net (VAT-inclusive prices optional), total in words, closing, signatures with the salesperson's name typed when issuing;
+  2. notes (structural standard, piles, warranties…), price breakdown (base + material upgrades), payment schedule, client acceptance;
+  3. floor plans with a per-floor area schedule, elevations;
+  4. building specification in editable categories — items linked to a material slot print the material the customer chose.
+- Quotations issued before this format keep their original layout (`QuotationLegacy`).
 - "ร่าง / DRAFT" watermark on every page unless the price was approved when the quotation was issued.
 - Contract = admin-editable template with `{{placeholders}}` (wording must come from the company's legal team).
-- `/settings/company`: company details, logo, VAT, validity, sales discount limit, payment instalments (must total 100%), quotation terms, contract templates. Empty fields fall back to sample text, flagged as such.
+- `/settings/company`: company details, logo, VAT, validity, sales discount limit, payment instalments (must total 100%), form code, VAT-inclusive prices, cover-letter intro/closing, notes, specification template editor, contract templates. Empty fields fall back to sample text, flagged as such.
 
 ## Milestones
 - [x] M1 Project skeleton, TH/EN, optional password gate (single user — no accounts)

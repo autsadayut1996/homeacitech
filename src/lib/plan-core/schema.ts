@@ -96,7 +96,8 @@ export const PlanSchema = z.object({
   schemaVersion: z.literal(1),
   units: z.literal("m"),
   site: SiteSchema,
-  building: z.object({ origin: PointSchema, rotationDeg: num }),
+  /** plinthM: ground-floor height above the road / existing ground (±0.00), default 0.50 m. */
+  building: z.object({ origin: PointSchema, rotationDeg: num, plinthM: num.min(0).max(3).optional() }),
   levels: z.array(LevelSchema).min(1),
   roof: z.object({
     type: z.enum(["hip", "gable", "flat", "shed", "butterfly"]),

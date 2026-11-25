@@ -12,6 +12,7 @@ import { ROOM_TYPE_INFO, type Plan, roomLabel } from "./schema";
 import { deriveWalls } from "./walls";
 import { layoutWall } from "./wallsegments";
 import { roofMesh, roofParts } from "./roof";
+import { fmtLevel, plinthOf } from "./annotate";
 
 export type SectionName = "A" | "B";
 
@@ -124,25 +125,35 @@ export function section(plan: Plan, name: SectionName, locale: "th" | "en" = "th
     }
   }
 
+  // lift everything onto the plinth: ±0.00 is the road / existing ground
+  const pz = plinthOf(plan);
+  for (const l of lines) {
+    l.a[1] = r3(l.a[1] + pz);
+    l.b[1] = r3(l.b[1] + pz);
+  }
+  for (const f of fills) for (const p of f) p[1] = r3(p[1] + pz);
+  for (const t of texts) t.at[1] += pz;
+  topZ += pz;
   // ground, level marks, storey heights, overall height
   const us = [...lines.flatMap((l) => [l.a[0], l.b[0]]), ...fills.flatMap((f) => f.map((p) => p[0]))];
   const minU = Math.min(...us);
   const maxU = Math.max(...us);
   add([minU - 2, 0], [maxU + 2, 0], "ground");
   const top = plan.levels[plan.levels.length - 1];
-  const marks = [...plan.levels.map((l) => l.elevationM), top.elevationM + top.floorToFloorM];
+  const marks = [0, ...plan.levels.map((l) => l.elevationM + pz), top.elevationM + top.floorToFloorM + pz].filter((z, i, a) => i === 0 || z - a[i - 1] > 0.05);
   const markU = minU - 1.2;
   for (const z of marks) {
     add([markU - 0.4, z], [minU, z], "level");
     add([markU - 0.15, z + 0.25], [markU, z], "level");
     add([markU, z], [markU + 0.15, z + 0.25], "level");
-    texts.push({ at: [markU - 0.5, z + 0.12], text: `${z >= 0 ? "+" : ""}${z.toFixed(2)}`, anchor: "end", size: 0.3 });
+    texts.push({ at: [markU - 0.5, z + 0.12], text: fmtLevel(z), anchor: "end", size: 0.3 });
   }
   const dimU = maxU + 1.0;
   for (const l of plan.levels) {
-    add([dimU, l.elevationM], [dimU, l.elevationM + l.floorToFloorM], "dim");
-    add([dimU - 0.12, l.elevationM], [dimU + 0.12, l.elevationM], "dim");
-    texts.push({ at: [dimU + 0.25, l.elevationM + l.floorToFloorM / 2], text: l.floorToFloorM.toFixed(2), anchor: "middle", size: 0.26, rotate: -90 });
+    const lz = l.elevationM + pz;
+    add([dimU, lz], [dimU, lz + l.floorToFloorM], "dim");
+    add([dimU - 0.12, lz], [dimU + 0.12, lz], "dim");
+    texts.push({ at: [dimU + 0.25, lz + l.floorToFloorM / 2], text: l.floorToFloorM.toFixed(2), anchor: "middle", size: 0.26, rotate: -90 });
   }
   const totU = dimU + 0.9;
   add([totU, 0], [totU, topZ], "dim");

@@ -4,16 +4,200 @@ import {
   type MepLayout,
   type Plan,
   type Point,
+  type OpeningMarks,
+  area,
+  centroid,
+  columns,
+  fmtLevel,
+  openingMarkPosition,
   roofPlan,
+  roomTag,
   sectionCut,
+  structuralGrid,
   toSite,
 } from "@/lib/plan-core";
 import { siteSvgFrame } from "@/components/SitePlanSvg";
-import { chainDimensions } from "@/lib/editor/ops";
 
 function mapper(plan: Plan) {
   const f = siteSvgFrame(plan.site);
   return (p: Point) => f.toSvg(toSite(plan, p));
+}
+
+/** Distance (m) from the building to the grid bubbles. */
+const GRID_OUT = 3.2;
+
+/** SVG window around the building and its grid bubbles, for plans drawn at a larger scale than the site. */
+export function buildingCrop(plan: Plan, margin = GRID_OUT + 1.1) {
+  const g = structuralGrid(plan).bounds;
+  const f = siteSvgFrame(plan.site);
+  const pts = [
+    [g.minX - margin, g.minY - margin],
+    [g.maxX + margin, g.minY - margin],
+    [g.maxX + margin, g.maxY + margin],
+    [g.minX - margin, g.maxY + margin],
+  ].map((p) => f.toSvg(toSite(plan, p as Point)));
+  const xs = pts.map((p) => p[0]);
+  const ys = pts.map((p) => p[1]);
+  return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
+}
+
+/**
+ * Structural grid: dash-dot axes with numbered / lettered bubbles on all four sides, the
+ * dimension chain between axes and the overall dimension, and columns on this level.
+ */
+export function GridOverlay({ plan, levelIndex }: { plan: Plan; levelIndex: number }) {
+  const M = mapper(plan);
+  const g = structuralGrid(plan);
+  const b = g.bounds;
+  const R = 0.38;
+  const ext = GRID_OUT;
+  const bubble = (p: Point, label: string, key: string) => {
+    const P = M(p);
+    return (
+      <g key={key}>
+        <circle cx={P[0]} cy={P[1]} r={R} fill="var(--paper)" stroke="var(--ink)" strokeWidth={0.035} />
+        <text x={P[0]} y={P[1]} fontSize={0.4} textAnchor="middle" dominantBaseline="central" fill="var(--ink)">
+          {label}
+        </text>
+      </g>
+    );
+  };
+  const line = (a: Point, c: Point, key: string, w = 0.018, dash?: string) => {
+    const A = M(a);
+    const C = M(c);
+    return <line key={key} x1={A[0]} y1={A[1]} x2={C[0]} y2={C[1]} stroke="var(--muted)" strokeWidth={w} strokeDasharray={dash} />;
+  };
+  const dim = (a: Point, c: Point, label: string, vertical: boolean, key: string) => {
+    const A = M(a);
+    const C = M(c);
+    const m: Point = [(A[0] + C[0]) / 2, (A[1] + C[1]) / 2];
+    return (
+      <g key={key} stroke="var(--ink)" fill="var(--ink)">
+        <line x1={A[0]} y1={A[1]} x2={C[0]} y2={C[1]} strokeWidth={0.015} />
+        {[A, C].map((P, i) => (
+          <line key={i} x1={P[0] - 0.09} y1={P[1] + 0.09} x2={P[0] + 0.09} y2={P[1] - 0.09} strokeWidth={0.03} />
+        ))}
+        <text x={m[0]} y={m[1]} fontSize={0.24} stroke="none" textAnchor="middle" dy={-0.07} transform={vertical ? `rotate(-90 ${m[0]} ${m[1]})` : undefined}>
+          {label}
+        </text>
+      </g>
+    );
+  };
+  const chain = (axes: { at: number }[], at: (v: number, off: number) => Point, vertical: boolean, k: string) => [
+    ...axes.slice(0, -1).map((a, i) => dim(at(a.at, 1.2), at(axes[i + 1].at, 1.2), (axes[i + 1].at - a.at).toFixed(2), vertical, `${k}${i}`)),
+    axes.length > 1 ? dim(at(axes[0].at, 1.9), at(axes[axes.length - 1].at, 1.9), (axes[axes.length - 1].at - axes[0].at).toFixed(2), vertical, `${k}t`) : null,
+  ];
+  const cols = columns(plan, levelIndex, g);
+  return (
+    <g data-testid="grid-overlay">
+      {g.x.map((a) => line([a.at, b.minY - ext + R], [a.at, b.maxY + ext - R], `gx${a.label}`, 0.018, "0.7 0.12 0.1 0.12"))}
+      {g.y.map((a) => line([b.minX - ext + R, a.at], [b.maxX + ext - R, a.at], `gy${a.label}`, 0.018, "0.7 0.12 0.1 0.12"))}
+      {chain(g.x, (v, off) => [v, b.minY - off], false, "dx")}
+      {chain(g.x, (v, off) => [v, b.maxY + off], false, "dX")}
+      {chain(g.y, (v, off) => [b.minX - off, v], true, "dy")}
+      {chain(g.y, (v, off) => [b.maxX + off, v], true, "dY")}
+      {g.x.flatMap((a) => [bubble([a.at, b.minY - ext], a.label, `bx${a.label}`), bubble([a.at, b.maxY + ext], a.label, `bX${a.label}`)])}
+      {g.y.flatMap((a) => [bubble([b.minX - ext, a.at], a.label, `by${a.label}`), bubble([b.maxX + ext, a.at], a.label, `bY${a.label}`)])}
+      {cols.map((c, i) => {
+        const P = M(c);
+        return <rect key={`c${i}`} x={P[0] - 0.1} y={P[1] - 0.1} width={0.2} height={0.2} fill="var(--ink)" />;
+      })}
+    </g>
+  );
+}
+
+/** Room tags (finish codes, floor level, ceiling) and door / window marks for one level. */
+export function PlanTags({ plan, levelIndex, marks }: { plan: Plan; levelIndex: number; marks: OpeningMarks }) {
+  const M = mapper(plan);
+  const level = plan.levels[levelIndex];
+  const h = 0.3;
+  return (
+    <g data-testid="plan-tags">
+      {level.rooms
+        .filter((r) => r.type !== "pool" && r.type !== "stair")
+        .map((r) => {
+          const t = roomTag(plan, level, r);
+          const cells = [t.floorCode, fmtLevel(t.floorLevel), ...(t.ceilingCode ? [t.ceilingCode, `+${t.ceilingHeight!.toFixed(2)}`] : [])];
+          const widths = cells.map((c) => (c.length <= 2 ? 0.42 : 0.72));
+          const total = widths.reduce((a, b) => a + b, 0);
+          const c = M(centroid(r.polygon));
+          let x = c[0] - total / 2;
+          const y = c[1] + 0.12;
+          return (
+            <g key={r.id}>
+              <text x={c[0]} y={y + h + 0.28} fontSize={0.2} textAnchor="middle" fill="var(--muted)">
+                {area(r.polygon).toFixed(1)} ตร.ม.
+              </text>
+              {cells.map((cell, i) => {
+                const w = widths[i];
+                const el = (
+                  <g key={i}>
+                    <rect x={x} y={y} width={w} height={h} fill="var(--paper)" stroke="var(--ink)" strokeWidth={0.015} />
+                    <text x={x + w / 2} y={y + h / 2} fontSize={0.17} textAnchor="middle" dominantBaseline="central" fill="var(--ink)">
+                      {cell}
+                    </text>
+                  </g>
+                );
+                x += w;
+                return el;
+              })}
+            </g>
+          );
+        })}
+      {level.rooms
+        .filter((r) => r.type === "stair" && levelIndex < plan.levels.length - 1)
+        .map((r) => {
+          // "ขึ้น" (up) arrow along the longer side of the stair
+          const xs = r.polygon.map((p) => p[0]);
+          const ys = r.polygon.map((p) => p[1]);
+          const along = Math.max(...xs) - Math.min(...xs) > Math.max(...ys) - Math.min(...ys);
+          const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+          const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+          const half = (along ? Math.max(...xs) - Math.min(...xs) : Math.max(...ys) - Math.min(...ys)) * 0.35;
+          const a = M(along ? [cx - half, cy] : [cx, cy - half]);
+          const e = M(along ? [cx + half, cy] : [cx, cy + half]);
+          const dx = e[0] - a[0];
+          const dy = e[1] - a[1];
+          const L = Math.hypot(dx, dy) || 1;
+          const ux = dx / L;
+          const uy = dy / L;
+          return (
+            <g key={r.id} stroke="var(--ink)" strokeWidth={0.025} fill="none">
+              <circle cx={a[0]} cy={a[1]} r={0.08} fill="var(--ink)" />
+              <line x1={a[0]} y1={a[1]} x2={e[0]} y2={e[1]} />
+              <polyline points={`${e[0] - ux * 0.25 - uy * 0.12},${e[1] - uy * 0.25 + ux * 0.12} ${e[0]},${e[1]} ${e[0] - ux * 0.25 + uy * 0.12},${e[1] - uy * 0.25 - ux * 0.12}`} />
+              <text x={a[0] - uy * 0.3} y={a[1] + ux * 0.3} fontSize={0.24} textAnchor="middle" stroke="none" fill="var(--ink)">
+                ขึ้น
+              </text>
+            </g>
+          );
+        })}
+      {level.openings.map((o) => {
+        const code = marks.codes[o.id];
+        const p = code && openingMarkPosition(level, o);
+        if (!p) return null;
+        const P = M(p);
+        const door = code.startsWith("D");
+        return (
+          <g key={o.id}>
+            {door ? (
+              <circle cx={P[0]} cy={P[1]} r={0.2} fill="var(--paper)" stroke="var(--door)" strokeWidth={0.02} />
+            ) : (
+              <polygon
+                points={[0, 60, 120, 180, 240, 300].map((d) => `${P[0] + 0.22 * Math.cos((d * Math.PI) / 180)},${P[1] + 0.2 * Math.sin((d * Math.PI) / 180)}`).join(" ")}
+                fill="var(--paper)"
+                stroke="var(--window)"
+                strokeWidth={0.02}
+              />
+            )}
+            <text x={P[0]} y={P[1]} fontSize={0.16} textAnchor="middle" dominantBaseline="central" fill="var(--ink)" fontWeight={600}>
+              {code}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
 }
 
 export function RoofPlanOverlay({ plan }: { plan: Plan }) {
@@ -71,39 +255,6 @@ export function SectionMarks({ plan }: { plan: Plan }) {
           </g>
         );
       })}
-    </g>
-  );
-}
-
-/** Chain dimensions below and to the left of a floor. */
-export function ChainDims({ plan, levelIndex }: { plan: Plan; levelIndex: number }) {
-  const M = mapper(plan);
-  const { xs, ys } = chainDimensions(plan, levelIndex);
-  if (xs.length < 2 || ys.length < 2) return null;
-  const dim = (a: Point, b: Point, label: string, vertical: boolean, key: string) => {
-    const A = M(a);
-    const B = M(b);
-    const m: Point = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2];
-    return (
-      <g key={key} stroke="var(--muted)" fill="var(--muted)">
-        <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} strokeWidth={0.02} />
-        {[A, B].map((P, i) => (
-          <line key={i} x1={P[0] - 0.08} y1={P[1] + 0.08} x2={P[0] + 0.08} y2={P[1] - 0.08} strokeWidth={0.03} />
-        ))}
-        <text x={m[0]} y={m[1]} fontSize={0.22} stroke="none" textAnchor="middle" dy={vertical ? 0 : -0.06} transform={vertical ? `rotate(-90 ${m[0]} ${m[1]})` : undefined}>
-          {label}
-        </text>
-      </g>
-    );
-  };
-  const y0 = ys[0];
-  const x0 = xs[0];
-  return (
-    <g>
-      {xs.slice(0, -1).map((x, i) => dim([x, y0 - 0.7], [xs[i + 1], y0 - 0.7], (xs[i + 1] - x).toFixed(2), false, `x${i}`))}
-      {dim([xs[0], y0 - 1.2], [xs[xs.length - 1], y0 - 1.2], (xs[xs.length - 1] - xs[0]).toFixed(2), false, "xt")}
-      {ys.slice(0, -1).map((y, i) => dim([x0 - 0.7, y], [x0 - 0.7, ys[i + 1]], (ys[i + 1] - y).toFixed(2), true, `y${i}`))}
-      {dim([x0 - 1.2, ys[0]], [x0 - 1.2, ys[ys.length - 1]], (ys[ys.length - 1] - ys[0]).toFixed(2), true, "yt")}
     </g>
   );
 }

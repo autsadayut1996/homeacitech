@@ -3,7 +3,8 @@ import { sampleTwoStoreyPlan } from "../samples";
 import { section, sectionCut } from "../section";
 import { ridgeHeight, roofParts } from "../roof";
 
-const plan = sampleTwoStoreyPlan();
+/** Geometry checks without the plinth (plinth behaviour is tested in annotate.test.ts). */
+const plan = { ...sampleTwoStoreyPlan(), building: { ...sampleTwoStoreyPlan().building, plinthM: 0 } };
 
 describe("sections", () => {
   it("cuts through the stair", () => {

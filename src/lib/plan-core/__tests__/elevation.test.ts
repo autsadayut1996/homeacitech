@@ -3,7 +3,8 @@ import { sampleTwoStoreyPlan } from "../samples";
 import { elevation, elevations } from "../elevation";
 import { ridgeHeight, roofParts } from "../roof";
 
-const plan = sampleTwoStoreyPlan();
+/** Geometry checks without the plinth (plinth behaviour is tested in annotate.test.ts). */
+const plan = { ...sampleTwoStoreyPlan(), building: { ...sampleTwoStoreyPlan().building, plinthM: 0 } };
 const count = (e: ReturnType<typeof elevation>, kind: string) => e.lines.filter((l) => l.kind === kind).length;
 
 describe("elevations", () => {
@@ -59,6 +60,6 @@ describe("elevations", () => {
 
   it("marks floor levels and the overall height", () => {
     const e = elevation(plan, "front");
-    expect(e.texts.map((t) => t.text)).toEqual(["+0.00", "+3.20", "+6.20", e.topZ.toFixed(2)]);
+    expect(e.texts.map((t) => t.text)).toEqual(["±0.00", "+3.20", "+6.20", e.topZ.toFixed(2)]);
   });
 });

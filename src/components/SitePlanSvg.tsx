@@ -39,6 +39,10 @@ interface Props {
   /** Explicit size, e.g. { width: "120mm", height: "90mm" } for drawings at scale. */
   style?: React.CSSProperties;
   className?: string;
+  /** Show only this window of the drawing (SVG user units, see siteSvgFrame) — e.g. the building alone. */
+  crop?: { x: number; y: number; w: number; h: number };
+  /** Room names with the area under them (default) or without (when room tags carry the data). */
+  roomAreas?: boolean;
 }
 
 const PAD = 1.5;
@@ -68,7 +72,7 @@ export function siteSvgFrame(site: Site) {
   };
 }
 
-export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], marks = [], pins = [], onSvgClick, showRooms = true, muted = false, children, style, className }: Props) {
+export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], marks = [], pins = [], onSvgClick, showRooms = true, muted = false, children, style, className, crop, roomAreas = true }: Props) {
   const roadPolys = roadPolygons(site);
   const all = [...site.boundary, ...roadPolys.flatMap((r) => r?.poly ?? [])];
   const bb = bbox(all);
@@ -86,10 +90,10 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
   // north arrow: north = +y rotated clockwise by northAngle
   const t = (site.northAngleDeg * Math.PI) / 180;
   const north: Point = [Math.sin(t), Math.cos(t)];
-  const arrowC: Point = [W - PAD * 0.9, PAD * 0.9];
+  const arrowC: Point = crop ? [crop.x + crop.w - 0.9, crop.y + 0.9] : [W - PAD * 0.9, PAD * 0.9];
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className={className} role="img" style={{ background: "var(--paper)", ...style }} onClick={onSvgClick}>
+    <svg viewBox={crop ? `${crop.x} ${crop.y} ${crop.w} ${crop.h}` : `0 0 ${W} ${H}`} className={className} role="img" style={{ background: "var(--paper)", ...style }} onClick={onSvgClick}>
       {roadPolys.map(
         (r, i) =>
           r && (
@@ -129,9 +133,11 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
                 <text x={X(c)} y={Y(c) - fs * 0.3} fontSize={lfs} textAnchor="middle" fill="var(--ink)">
                   {label}
                 </text>
-                <text x={X(c)} y={Y(c) + fs * 0.8} fontSize={Math.min(fs * 0.7, lfs)} textAnchor="middle" fill="var(--muted)">
-                  {area(room.polygon).toFixed(1)} {locale === "th" ? "ตร.ม." : "m²"}
-                </text>
+                {roomAreas && (
+                  <text x={X(c)} y={Y(c) + fs * 0.8} fontSize={Math.min(fs * 0.7, lfs)} textAnchor="middle" fill="var(--muted)">
+                    {area(room.polygon).toFixed(1)} {locale === "th" ? "ตร.ม." : "m²"}
+                  </text>
+                )}
               </g>
             );
           })}
