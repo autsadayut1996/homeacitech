@@ -373,10 +373,10 @@
         <details>
           <summary>ขั้นตอนติดตั้งบน Vercel</summary>
           <ol class="steps">
-            <li>Vercel → Add New → Project → เลือก repo <code>autsadayut1996/homeacitech</code></li>
-            <li>แท็บ Storage → สร้าง Neon (Postgres) แล้วเชื่อมกับโปรเจกต์</li>
-            <li>Settings → Environment Variables: <code>DATABASE_URL</code> (pooled), <code>DIRECT_URL</code> (direct/unpooled), <code>APP_PASSWORD</code> (รหัสผ่านเข้าเว็บ), <code>ANTHROPIC_API_KEY</code></li>
-            <li>Build Command: <code>npm run vercel-build</code> แล้ว Deploy</li>
+            <li>Vercel → Add New → Project → เลือก repo <code>autsadayut1996/homeacitech</code> (ไม่ต้องแก้ Build Command ระบบใช้สคริปต์ <code>vercel-build</code> เอง)</li>
+            <li>แท็บ Storage → สร้าง Neon (Postgres) → Connect กับโปรเจกต์ ระบบอ่านตัวแปรฐานข้อมูลที่ Neon ตั้งให้ได้เอง ไม่ต้องตั้ง <code>DIRECT_URL</code></li>
+            <li>Settings → Environment Variables: <code>APP_PASSWORD</code> (รหัสผ่านเข้าเว็บ) และ <code>ANTHROPIC_API_KEY</code></li>
+            <li>Deployments → ⋯ → Redeploy หลังเพิ่มฐานข้อมูลหรือตัวแปร</li>
             <li>ใส่ข้อมูลตั้งต้นครั้งเดียว จากเครื่องที่มี Node.js:
               <pre>DATABASE_URL="ค่า DIRECT_URL" npx prisma db seed</pre>
               <p class="note">คำสั่งนี้ลบข้อมูลเดิมทั้งหมดก่อนใส่ข้อมูลตัวอย่าง รันครั้งเดียวตอนเริ่มเท่านั้น</p>

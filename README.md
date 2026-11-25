@@ -37,14 +37,14 @@ npm test                      # unit tests (plan-core)
 ```
 
 ## Deploy to Vercel
-1. Create a Postgres database (Vercel Marketplace → **Neon** is simplest).
-2. In the Vercel project set env vars:
-   - `DATABASE_URL` — pooled connection string
-   - `DIRECT_URL` — direct (non-pooled) connection string, used for migrations
-   - `APP_PASSWORD` — **recommended**: the app has no user accounts, so without this anyone with the URL can use it (and your Claude API credits later)
-   - `ANTHROPIC_API_KEY` — from milestone 3
-3. Set the build command to `npm run vercel-build` (runs `prisma migrate deploy` then `next build`).
-4. Seed once from your machine: `DATABASE_URL=<direct url> npm run db:seed`.
+1. Import the GitHub repo in Vercel (Add New → Project). Vercel runs the `vercel-build` script automatically (migrations + build); no build-command change is needed.
+2. Add a database: project → **Storage** → **Neon** (Postgres) → Connect. The integration's variables (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `POSTGRES_*`) are picked up automatically — you do not need to set `DIRECT_URL` (see `scripts/db-env.mjs`).
+3. Settings → Environment Variables:
+   - `APP_PASSWORD` — **recommended**: the app has no user accounts, so without this anyone with the URL can use it (and your Claude API credits)
+   - `ANTHROPIC_API_KEY` — for AI floor plans
+4. Redeploy (Deployments → ⋯ → Redeploy) after adding the database or variables.
+5. Seed once from your machine (wipes all data first — run only on an empty database):
+   `DATABASE_URL="<unpooled connection string>" npx prisma db seed`
 
 ## AI floor plans (M3)
 - Model: `claude-opus-5-5` (adaptive thinking, effort `high`), structured JSON output, server-side refusal fallback (`fallbacks: "default"`).
