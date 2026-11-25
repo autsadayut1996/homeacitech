@@ -39,7 +39,7 @@ describe("DXF export", () => {
     expect(count("ARC", "A-DOOR")).toBe(15); // 15 hinged doors in the sample
     expect(count("POLYLINE", "A-WALL")).toBeGreaterThan(40);
     expect(count("LINE", "A-GLAZ")).toBe(12 * 5); // 3 parallel lines + 2 jambs per window
-    expect(count("POLYLINE", "C-PROP")).toBe(2); // plot outline on each floor drawing
+    expect(count("POLYLINE", "C-PROP")).toBe(3); // plot outline on each floor drawing + the roof plan
     expect(count("TEXT", "A-TEXT")).toBe(21 * 2); // name + size per room
     // POLYLINEs are terminated
     expect(out.filter((e) => e.type === "POLYLINE").length).toBe(out.filter((e) => e.type === "SEQEND").length);
@@ -69,6 +69,19 @@ describe("DXF export", () => {
     expect(elevTitles).toHaveLength(4);
     expect(out.filter((e) => layerOf(e) === "A-ELEV").length).toBeGreaterThan(40);
     expect(out.filter((e) => layerOf(e) === "A-ELEV-OPNG").length).toBeGreaterThan(40);
+  });
+
+  it("adds sections, the roof plan and preliminary MEP layers", () => {
+    const on = (layer: string, type?: string) => out.filter((e) => layerOf(e) === layer && (!type || e.type === type)).length;
+    expect(on("A-SECT", "SOLID")).toBeGreaterThan(6); // cut walls and slabs
+    expect(on("A-ROOF-PLAN")).toBeGreaterThan(8);
+    expect(on("E-LITE")).toBeGreaterThan(20);
+    expect(on("E-POWR")).toBeGreaterThan(20);
+    expect(on("P-FIXT")).toBeGreaterThan(10);
+    expect(on("P-SANR", "POLYLINE")).toBeGreaterThan(5);
+    const titles = out.filter((e) => e.type === "TEXT" && layerOf(e) === "A-ANNO").map((e) => e.codes.find(([c]) => c === 1)?.[1]);
+    expect(titles).toContain("รูปตัด A-A");
+    expect(titles).toContain("ผังหลังคา");
   });
 
   it("includes the not-for-construction note", () => {

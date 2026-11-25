@@ -388,7 +388,8 @@
   },
   "export": {
     "dxf": "DXF (AutoCAD)",
-    "dxfHint": "Download all floor plans as DXF in millimetres with separate layers — opens in AutoCAD"
+    "dxfHint": "Download all floor plans as DXF in millimetres with separate layers — opens in AutoCAD",
+    "drawings": "Drawing set (A3)"
   },
   "doc": {
     "quotation": "Quotation",

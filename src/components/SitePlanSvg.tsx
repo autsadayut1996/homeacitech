@@ -30,6 +30,14 @@ interface Props {
   pins?: { x: number; y: number; label: string; resolved?: boolean; active?: boolean }[];
   /** Client-only: receives the click position in SVG user units. */
   onSvgClick?: (e: React.MouseEvent<SVGSVGElement>) => void;
+  /** false: plot only (e.g. under a roof plan). */
+  showRooms?: boolean;
+  /** Pale rooms so overlays (electrical / sanitary symbols) stand out. */
+  muted?: boolean;
+  /** Extra drawing in this SVG's coordinates — use siteSvgFrame(site).toSvg(). */
+  children?: React.ReactNode;
+  /** Explicit size, e.g. { width: "120mm", height: "90mm" } for drawings at scale. */
+  style?: React.CSSProperties;
   className?: string;
 }
 
@@ -52,12 +60,15 @@ export function siteSvgFrame(site: Site) {
   const all = [...site.boundary, ...roadPolygons(site).flatMap((r) => r?.poly ?? [])];
   const bb = bbox(all);
   return {
+    /** Size of the drawing in metres (viewBox). */
+    width: bb.width + PAD * 2,
+    height: bb.height + PAD * 2,
     toSvg: (p: Point): Point => [p[0] - bb.minX + PAD, bb.maxY - p[1] + PAD],
     toSite: (x: number, y: number): Point => [x + bb.minX - PAD, bb.maxY + PAD - y],
   };
 }
 
-export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], marks = [], pins = [], onSvgClick, className }: Props) {
+export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], marks = [], pins = [], onSvgClick, showRooms = true, muted = false, children, style, className }: Props) {
   const roadPolys = roadPolygons(site);
   const all = [...site.boundary, ...roadPolys.flatMap((r) => r?.poly ?? [])];
   const bb = bbox(all);
@@ -78,7 +89,7 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
   const arrowC: Point = [W - PAD * 0.9, PAD * 0.9];
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className={className} role="img" style={{ background: "var(--paper)" }} onClick={onSvgClick}>
+    <svg viewBox={`0 0 ${W} ${H}`} className={className} role="img" style={{ background: "var(--paper)", ...style }} onClick={onSvgClick}>
       {roadPolys.map(
         (r, i) =>
           r && (
@@ -95,8 +106,8 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
         <polygon points={pts(buildable.polygon)} fill="none" stroke="var(--setback)" strokeWidth={0.06} strokeDasharray="0.4 0.25" />
       )}
 
-      {plan && level && (
-        <g>
+      {plan && level && showRooms && (
+        <g opacity={muted ? 0.45 : 1}>
           {level.rooms.map((room) => {
             const poly = polygonToSite(plan, room.polygon);
             const c = centroid(poly);
@@ -170,6 +181,8 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
           </text>
         </g>
       ))}
+
+      {children}
 
       <g transform={`translate(${arrowC[0]} ${arrowC[1]})`}>
         <circle r={0.6} fill="var(--paper)" stroke="var(--muted)" strokeWidth={0.04} />

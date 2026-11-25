@@ -231,6 +231,9 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
               <Link href={`/projects/${project.id}/design?v=${current.id}`} className="btn-ghost">
                 🧱 {t("studio.open")}
               </Link>
+              <Link href={`/projects/${project.id}/drawings?v=${current.id}`} className="btn-ghost">
+                📐 {t("export.drawings")}
+              </Link>
               <a href={`/projects/${project.id}/export/dxf?v=${current.id}&lang=${locale}`} className="btn-ghost" download title={t("export.dxfHint")}>
                 ⬇ {t("export.dxf")}
               </a>

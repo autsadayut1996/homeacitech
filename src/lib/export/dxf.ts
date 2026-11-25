@@ -24,6 +24,11 @@ import {
   roofParts,
   roomLabel,
   elevations,
+  section,
+  roofPlan,
+  mepLayout,
+  type MepKind,
+  type MepLayout,
   type Elevation,
   signedArea,
   toSite,
@@ -43,7 +48,14 @@ export const LAYERS = {
   "A-ANNO": { color: 2, ltype: "CONTINUOUS", th: "หัวกระดาษ/ทิศเหนือ" },
   "A-ELEV": { color: 7, ltype: "CONTINUOUS", th: "รูปด้าน: ผนัง หลังคา ระดับดิน" },
   "A-ELEV-OPNG": { color: 4, ltype: "CONTINUOUS", th: "รูปด้าน: ประตู หน้าต่าง ราวกันตก" },
-  "A-ELEV-DIMS": { color: 8, ltype: "CONTINUOUS", th: "รูปด้าน: ระดับชั้น ความสูง" },
+  "A-ELEV-DIMS": { color: 8, ltype: "CONTINUOUS", th: "รูปด้าน/รูปตัด: ระดับชั้น ความสูง" },
+  "A-SECT": { color: 7, ltype: "CONTINUOUS", th: "รูปตัด: ส่วนที่ถูกตัด" },
+  "A-ROOF-PLAN": { color: 6, ltype: "CONTINUOUS", th: "ผังหลังคา" },
+  "E-LITE": { color: 30, ltype: "CONTINUOUS", th: "ไฟฟ้า: ดวงโคม สวิตช์" },
+  "E-POWR": { color: 1, ltype: "CONTINUOUS", th: "ไฟฟ้า: เต้ารับ แอร์ ตู้ไฟ มิเตอร์" },
+  "P-FIXT": { color: 5, ltype: "CONTINUOUS", th: "สุขาภิบาล: สุขภัณฑ์ ถังบำบัด" },
+  "P-SANR": { color: 34, ltype: "CONTINUOUS", th: "สุขาภิบาล: ท่อน้ำทิ้ง (แนวโดยประมาณ)" },
+  "P-DOMW": { color: 4, ltype: "DASHED", th: "สุขาภิบาล: ท่อน้ำดี (แนวโดยประมาณ)" },
   "C-PROP": { color: 3, ltype: "CONTINUOUS", th: "แนวเขตที่ดิน" },
   "C-SETB": { color: 1, ltype: "DASHED", th: "เส้นระยะร่น" },
   "C-ROAD": { color: 8, ltype: "CONTINUOUS", th: "ถนน" },
@@ -158,6 +170,17 @@ class Writer {
     this.pair(51, endDeg);
   }
 
+  /** Filled quadrilateral (R12 SOLID; vertex order 1-2-4-3 as the format requires). */
+  solid(layer: Layer, q: [Point, Point, Point, Point]) {
+    this.count++;
+    this.pair(0, "SOLID");
+    this.pair(8, layer);
+    this.xy(q[0], 10);
+    this.xy(q[1], 11);
+    this.xy(q[3], 12);
+    this.xy(q[2], 13);
+  }
+
   circle(layer: Layer, c: Point, r: number) {
     this.count++;
     this.pair(0, "CIRCLE");
@@ -199,7 +222,7 @@ const mul = (a: Point, k: number): Point => [a[0] * k, a[1] * k];
 const deg = (v: Point) => (Math.atan2(v[1], v[0]) * 180) / Math.PI;
 
 /** Draw one floor at offset `off` (site coordinates + offset). */
-function drawLevel(w: Writer, plan: Plan, level: Level, li: number, off: Point, locale: "th" | "en") {
+function drawLevel(w: Writer, plan: Plan, level: Level, li: number, off: Point, locale: "th" | "en", mep: MepLayout) {
   const S = (p: Point): Point => add(toSite(plan, p), off);
   const site = plan.site;
   const ccw = signedArea(site.boundary) >= 0;
@@ -284,6 +307,10 @@ function drawLevel(w: Writer, plan: Plan, level: Level, li: number, off: Point, 
     }
   }
 
+  // preliminary electrical / sanitary symbols and pipe routes (own layers, can be frozen)
+  for (const r of mep.runs.filter((x) => x.levelId === level.id)) w.poly(r.kind === "drain" ? "P-SANR" : "P-DOMW", r.points.map(S), false);
+  for (const it of mep.items.filter((x) => x.levelId === level.id)) mepSymbol(w, it.kind, S(it.at));
+
   // roof overhang outline on the top floor
   if (li === plan.levels.length - 1) {
     for (const p of roofParts(plan)) {
@@ -333,7 +360,19 @@ export function planToDxf(plan: Plan, opts: DxfOptions = {}): string {
   const w = new Writer(k);
   const sb = bbox(plan.site.boundary);
   const gap = 12; // metres between floors (room for dimensions and the north arrow)
-  plan.levels.forEach((level, li) => drawLevel(w, plan, level, li, [li * (sb.width + gap) - sb.minX, -sb.minY], locale));
+  const mep = mepLayout(plan);
+  plan.levels.forEach((level, li) => drawLevel(w, plan, level, li, [li * (sb.width + gap) - sb.minX, -sb.minY], locale, mep));
+
+  // roof plan to the right of the floor plans
+  {
+    const off: Point = [plan.levels.length * (sb.width + gap) - sb.minX, -sb.minY];
+    const S = (p: Point): Point => add(toSite(plan, p), off);
+    w.poly("C-PROP", plan.site.boundary.map((p) => add(p, off)));
+    const rp = roofPlan(plan);
+    for (const l of rp.lines) w.line(l.kind === "wall" ? "A-ROOF" : "A-ROOF-PLAN", S(l.a), S(l.b));
+    for (const t of rp.labels) w.text("A-ROOF-PLAN", S(t.at), 0.3, t.text);
+    w.text("A-ANNO", add([sb.minX, sb.maxY + 1.6], off), 0.5, locale === "th" ? "ผังหลังคา" : "Roof plan", 0, "left");
+  }
 
   // elevations in a row below the floor plans
   const ELEV_LAYER = { wall: "A-ELEV", roof: "A-ELEV", ground: "A-ELEV", cut: "A-ELEV", opening: "A-ELEV-OPNG", glass: "A-ELEV-OPNG", railing: "A-ELEV-OPNG", level: "A-ELEV-DIMS", dim: "A-ELEV-DIMS" } as const;
@@ -341,12 +380,16 @@ export function planToDxf(plan: Plan, opts: DxfOptions = {}): string {
   const SIDE_EN = { front: "Front elevation", back: "Rear elevation", left: "Left elevation", right: "Right elevation" } as const;
   const elevTop = -14;
   let ex = 0;
-  elevations(plan).forEach((e: Elevation) => {
+  const drawings: { e: Elevation; label: string }[] = [
+    ...elevations(plan).map((e) => ({ e, label: `${locale === "th" ? SIDE_TH[e.side] : SIDE_EN[e.side]} (${e.facing})` })),
+    ...(["A", "B"] as const).map((n) => ({ e: section(plan, n, locale), label: locale === "th" ? `รูปตัด ${n}-${n}` : `Section ${n}-${n}` })),
+  ];
+  drawings.forEach(({ e, label }) => {
     const off: Point = [ex - e.bounds.minU, elevTop - e.bounds.maxZ];
     const P = (p: [number, number]): Point => [p[0] + off[0], p[1] + off[1]];
-    for (const l of e.lines) w.line(ELEV_LAYER[l.kind], P(l.a), P(l.b));
+    for (const f of e.fills ?? []) if (f.length === 4) w.solid("A-SECT", f.map(P) as [Point, Point, Point, Point]);
+    for (const l of e.lines) w.line(l.kind === "cut" ? "A-SECT" : ELEV_LAYER[l.kind], P(l.a), P(l.b));
     for (const t of e.texts) w.text("A-ELEV-DIMS", P(t.at), t.size, t.text, t.rotate ? -t.rotate : 0);
-    const label = `${locale === "th" ? SIDE_TH[e.side] : SIDE_EN[e.side]} (${e.facing})`;
     w.text("A-ANNO", P([(e.bounds.minU + e.bounds.maxU) / 2, e.bounds.maxZ + 0.6]), 0.45, label);
     ex += e.bounds.maxU - e.bounds.minU + 4;
   });
@@ -459,4 +502,31 @@ export function planToDxf(plan: Plan, opts: DxfOptions = {}): string {
   p(2, "ENTITIES");
   const tail = ["0", "ENDSEC", "0", "EOF"];
   return [...head, ...w.entities(), ...tail].join("\r\n") + "\r\n";
+}
+
+const MEP_TEXT: Record<MepKind, string> = {
+  light: "", switch: "S", socket: "P", ac: "AC", heater: "WH", db: "DB", meter: "kWh",
+  wc: "WC", basin: "LAV", shower: "SH", sink: "SINK", washer: "W", floor_drain: "FD", riser: "RS",
+  septic: "ST", grease: "GT", water_meter: "WMT", tank_pump: "WT+P",
+};
+const ELECTRIC = new Set<MepKind>(["light", "switch", "socket", "ac", "heater", "db", "meter"]);
+
+/** Simple CAD symbol: circle or box with an abbreviation (lights: circle with a cross). */
+function mepSymbol(w: Writer, kind: MepKind, c: Point) {
+  const layer: Layer = kind === "light" || kind === "switch" ? "E-LITE" : ELECTRIC.has(kind) ? "E-POWR" : "P-FIXT";
+  const r = kind === "septic" ? 0.6 : kind === "tank_pump" ? 0.5 : kind === "light" ? 0.17 : kind === "switch" || kind === "riser" ? 0.09 : 0.15;
+  if (kind === "light") {
+    w.circle(layer, c, r);
+    w.line(layer, add(c, [-0.12, -0.12]), add(c, [0.12, 0.12]));
+    w.line(layer, add(c, [-0.12, 0.12]), add(c, [0.12, -0.12]));
+    return;
+  }
+  const box = kind === "ac" || kind === "db" || kind === "sink" || kind === "basin" || kind === "shower" || kind === "washer" || kind === "grease";
+  if (box) {
+    const hw = kind === "ac" || kind === "sink" ? 0.4 : kind === "shower" ? 0.4 : 0.28;
+    const hh = kind === "ac" ? 0.13 : kind === "shower" ? 0.4 : 0.22;
+    w.poly(layer, [add(c, [-hw, -hh]), add(c, [hw, -hh]), add(c, [hw, hh]), add(c, [-hw, hh])]);
+  } else w.circle(layer, c, r);
+  const label = MEP_TEXT[kind];
+  if (label) w.text(layer, c, Math.min(0.18, r * 1.1), label);
 }

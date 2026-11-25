@@ -90,6 +90,13 @@ Preliminary only — every screen says it must be certified by a licensed archit
 ## Elevations
 Front / rear / left / right elevations are generated from the plan (`src/lib/plan-core/elevation.ts`, unit-tested): exterior wall faces turned to the viewer, doors and windows at real size and height (hidden ones left out), balcony railings, carport posts, the roof projected from its 3D surfaces (hip/gable/shed/butterfly/flat), ground line, floor levels and overall height. Shown on the project page, printed on quotations and written to the DXF (layers `A-ELEV`, `A-ELEV-OPNG`, `A-ELEV-DIMS`). Outline drawings only — no material detail.
 
+## Drawing set (A3) — phase 2, pulled forward
+`/projects/:id/drawings?v=<versionId>` — A3 landscape sheets printed at true scale (one scale for all plans, one for elevations/sections), each with frame and title block (company, project, signature boxes for architect / civil / electrical / sanitary engineer / owner, sheet number, version, date):
+A-00 index + general notes + submission checklist (sample), A-01 site plan, A-02… floor plans with chain dimensions and section lines, A-10/A-11 elevations, A-20 sections A-A/B-B (`section.ts`), A-30 roof plan (`roofplan.ts`), E-0x electrical and S-0x sanitary plans with legends.
+- Electrical / sanitary layouts are generated from room types (`mep.ts`) — preliminary concepts only; licensed engineers design the real systems.
+- Watermark "ร่าง — ยังไม่ผ่านการรับรอง" until a licensed architect AND engineer approved that version; their names and licence numbers then appear in the title block.
+- The DXF contains the same content (roof plan, sections, `E-LITE`/`E-POWR`/`P-FIXT`/`P-SANR`/`P-DOMW` layers).
+
 ## DXF export for AutoCAD (phase 2, pulled forward)
 `GET /projects/:id/export/dxf?v=<versionId>&units=mm|m&lang=th|en` — button "⬇ DXF (AutoCAD)" on the project page.
 - AutoCAD R12 ASCII DXF (opens in every AutoCAD version, BricsCAD, LibreCAD…), millimetres by default; floors side by side, each with plot, setbacks and road.

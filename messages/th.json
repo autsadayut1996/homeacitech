@@ -388,7 +388,8 @@
   },
   "export": {
     "dxf": "DXF (AutoCAD)",
-    "dxfHint": "ดาวน์โหลดแปลนทุกชั้นเป็นไฟล์ DXF หน่วยมิลลิเมตร แยก layer — เปิดใน AutoCAD ได้"
+    "dxfHint": "ดาวน์โหลดแปลนทุกชั้นเป็นไฟล์ DXF หน่วยมิลลิเมตร แยก layer — เปิดใน AutoCAD ได้",
+    "drawings": "ชุดแบบ A3"
   },
   "doc": {
     "quotation": "ใบเสนอราคา",

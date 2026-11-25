@@ -156,6 +156,7 @@
         <li><a href="#approval">ขั้นอนุมัติ</a></li>
         <li><a href="#versions">เทียบเวอร์ชัน</a></li>
         <li><a href="#quote">ใบเสนอราคาและสัญญา</a></li>
+        <li><a href="#drawings">ชุดแบบ A3</a></li>
         <li><a href="#dxf">ส่งแบบเข้า AutoCAD</a></li>
         <li class="group">สำหรับแอดมิน</li>
         <li><a href="#admin-company">ตั้งค่าบริษัท/เอกสาร</a></li>
@@ -312,9 +313,38 @@
         <p class="tip">ถ้าราคายังไม่ได้รับอนุมัติตอนออกใบ ทุกหน้าจะมีลายน้ำ <strong>"ร่าง / DRAFT"</strong> เมื่ออนุมัติราคาแล้ว ให้ออกใบใหม่ จะได้ใบที่ไม่มีลายน้ำ</p>
       </section>
 
+      <section class="step" id="drawings">
+        <div class="step-head"><span class="num">11</span><h2>ชุดแบบ A3 (เตรียมยื่นขออนุญาต)</h2><span class="where">ปุ่ม 📐 ชุดแบบ A3</span></div>
+        <p>ระบบจัดแบบลงกระดาษ A3 แนวนอน ตามมาตราส่วนจริง (เช่น 1:100, 1:125) ทุกแผ่นมีกรอบและ title block: โลโก้บริษัท ข้อมูลโครงการ ช่องลงนามสถาปนิก วิศวกรโยธา วิศวกรไฟฟ้า วิศวกรสุขาภิบาล และเจ้าของ เลขแผ่น และเวอร์ชันแบบ</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>แผ่น</th><th>เนื้อหา</th></tr></thead>
+            <tbody>
+              <tr><td>A-00</td><td>สารบัญแบบ หมายเหตุทั่วไป และรายการเอกสารประกอบการยื่นขออนุญาต (ตัวอย่าง)</td></tr>
+              <tr><td>A-01</td><td>ผังบริเวณ</td></tr>
+              <tr><td>A-02 …</td><td>ผังพื้นแต่ละชั้น พร้อมเส้นบอกขนาดและแนวตัด A-A / B-B</td></tr>
+              <tr><td>A-10, A-11</td><td>รูปด้าน 4 ด้าน</td></tr>
+              <tr><td>A-20</td><td>รูปตัด A-A และ B-B (ตัดผ่านบันได)</td></tr>
+              <tr><td>A-30</td><td>ผังหลังคา: แนวชายคา สัน ตะเข้ ทิศลาดและองศา</td></tr>
+              <tr><td>E-01 …</td><td>ผังไฟฟ้าแต่ละชั้น: ดวงโคม สวิตช์ เต้ารับ แอร์ เครื่องทำน้ำอุ่น ตู้ไฟ มิเตอร์ พร้อมตารางสัญลักษณ์</td></tr>
+              <tr><td>S-01 …</td><td>ผังสุขาภิบาลแต่ละชั้น: สุขภัณฑ์ ท่อน้ำทิ้ง ท่อน้ำดี ถังบำบัด บ่อดักไขมัน มาตรวัดน้ำ ถังเก็บน้ำและปั๊ม</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="two">
+          <figure><img src="img/sheet-plan.jpg" alt="แผ่น A-02 ผังพื้นชั้น 1 บนกระดาษ A3 พร้อม title block และลายน้ำร่าง" loading="lazy" width="1158" height="818"><figcaption>A-02 ผังพื้นชั้น 1</figcaption></figure>
+          <figure><img src="img/sheet-sanitary.jpg" alt="แผ่น S-01 ผังสุขาภิบาลชั้น 1 พร้อมตารางสัญลักษณ์" loading="lazy" width="1158" height="818"><figcaption>S-01 ผังสุขาภิบาลชั้น 1</figcaption></figure>
+        </div>
+        <ol class="steps">
+          <li>กด <span class="chip">🖨 พิมพ์ / บันทึกเป็น PDF (A3)</span> เลือกขนาด <strong>A3 แนวนอน</strong> ขอบกระดาษ <strong>ไม่มี (None)</strong> และเปิด <strong>กราฟิกพื้นหลัง</strong></li>
+          <li>ทุกแผ่นจะมีลายน้ำ <strong>"ร่าง — ยังไม่ผ่านการรับรอง"</strong> จนกว่าสถาปนิกและวิศวกรจะอนุมัติแบบเวอร์ชันนั้นในขั้นตรวจแบบ เมื่ออนุมัติแล้ว ชื่อและเลขใบอนุญาตจะขึ้นในช่องลงนามให้เอง</li>
+        </ol>
+        <p class="note">ผังไฟฟ้าและสุขาภิบาลระบบวางให้อัตโนมัติจากประเภทห้อง เป็นแนวคิดเบื้องต้นเท่านั้น วิศวกรผู้มีใบอนุญาตต้องออกแบบและคำนวณระบบจริง แนวท่อเป็นแนวโดยประมาณ ส่วนรายการเอกสารประกอบการยื่นเป็นตัวอย่าง ต้องตรวจกับสำนักงานเขตหรือเทศบาล</p>
+      </section>
+
       <section class="step" id="dxf">
-        <div class="step-head"><span class="num">11</span><h2>ส่งแบบเข้า AutoCAD</h2><span class="where">ปุ่ม ⬇ DXF (AutoCAD)</span></div>
-        <p>ได้ไฟล์ <code>.dxf</code> ของแปลนทุกชั้นและรูปด้าน 4 ด้าน (วางเรียงใต้ผังพื้น) หน่วยมิลลิเมตร เปิดใน AutoCAD ได้ทุกเวอร์ชัน ถ้าต้องการไฟล์ DWG ให้ Save As ใน AutoCAD</p>
+        <div class="step-head"><span class="num">12</span><h2>ส่งแบบเข้า AutoCAD</h2><span class="where">ปุ่ม ⬇ DXF (AutoCAD)</span></div>
+        <p>ได้ไฟล์ <code>.dxf</code> ของผังพื้นทุกชั้น (พร้อม layer ไฟฟ้า/สุขาภิบาล) ผังหลังคา รูปด้าน 4 ด้าน และรูปตัด 2 รูป หน่วยมิลลิเมตร เปิดใน AutoCAD ได้ทุกเวอร์ชัน ถ้าต้องการไฟล์ DWG ให้ Save As ใน AutoCAD</p>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Layer</th><th>เนื้อหา</th></tr></thead>
@@ -326,6 +356,9 @@
               <tr><td><code>A-ROOF</code> / <code>A-OUTD</code></td><td>แนวชายคา / ที่จอดรถ ระเบียง</td></tr>
               <tr><td><code>C-PROP</code> / <code>C-SETB</code> / <code>C-ROAD</code></td><td>เขตที่ดิน / ระยะร่น / ถนน</td></tr>
               <tr><td><code>A-ELEV</code> / <code>A-ELEV-OPNG</code> / <code>A-ELEV-DIMS</code></td><td>รูปด้าน: ผนัง หลังคา ระดับดิน / ประตู หน้าต่าง ราวกันตก / ระดับชั้นและความสูง</td></tr>
+              <tr><td><code>A-SECT</code> / <code>A-ROOF-PLAN</code></td><td>รูปตัด (ส่วนที่ถูกตัดทึบ) / ผังหลังคา</td></tr>
+              <tr><td><code>E-LITE</code> / <code>E-POWR</code></td><td>ไฟฟ้า: ดวงโคม สวิตช์ / เต้ารับ แอร์ ตู้ไฟ มิเตอร์</td></tr>
+              <tr><td><code>P-FIXT</code> / <code>P-SANR</code> / <code>P-DOMW</code></td><td>สุขาภิบาล: สุขภัณฑ์และถัง / ท่อน้ำทิ้ง / ท่อน้ำดี</td></tr>
               <tr><td><code>A-ANNO</code></td><td>หัวกระดาษ ทิศเหนือ หมายเหตุ "ไม่ใช่แบบก่อสร้าง"</td></tr>
             </tbody>
           </table>

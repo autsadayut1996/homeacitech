@@ -13,7 +13,7 @@ const STYLE: Record<LineKind, { stroke: string; width: number; dash?: string }> 
 };
 
 /** Line drawing of one elevation (z up). Server-renderable; used on the project page and quotations. */
-export function ElevationSvg({ e, title, className }: { e: Elevation; title?: string; className?: string }) {
+export function ElevationSvg({ e, title, className, style }: { e: Elevation; title?: string; className?: string; style?: React.CSSProperties }) {
   const { minU, maxU, minZ, maxZ } = e.bounds;
   const top = maxZ + (title ? 0.9 : 0);
   const W = maxU - minU;
@@ -21,7 +21,7 @@ export function ElevationSvg({ e, title, className }: { e: Elevation; title?: st
   const X = (u: number) => u - minU;
   const Y = (z: number) => top - z;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className={className} role="img" aria-label={title} style={{ background: "var(--paper)" }}>
+    <svg viewBox={`0 0 ${W} ${H}`} className={className} role="img" aria-label={title} style={{ background: "var(--paper)", ...style }}>
       {title && (
         <text x={W / 2} y={0.6} fontSize={0.45} textAnchor="middle" fill="var(--ink)" fontWeight={600}>
           {title}

@@ -12,3 +12,4 @@ export * from "./wallsegments";
 export * from "./elevation";
 export * from "./roofplan";
 export * from "./section";
+export * from "./mep";

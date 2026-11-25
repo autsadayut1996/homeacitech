@@ -132,3 +132,48 @@ body {
     position: fixed;
   }
 }
+
+/* ---- A3 drawing sheets ---- */
+@page a3 {
+  size: A3 landscape;
+  margin: 0;
+}
+.sheet {
+  page: a3;
+  position: relative;
+  width: 420mm;
+  height: 297mm;
+  background: #fff;
+  color: #111;
+  margin: 0 auto 16px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+  break-after: page;
+  overflow: hidden;
+  font-size: 2.6mm;
+  line-height: 1.35;
+  --paper: #fff;
+  --ink: #111;
+  --muted: #555;
+  --land: #f6f9f2;
+  --road: #e6e6e6;
+  --room: #fff;
+  --wet: #eef5fb;
+  --outdoor: #f5f5f5;
+}
+.sheet:last-child {
+  break-after: auto;
+}
+@media screen {
+  .sheet-viewport {
+    zoom: 0.55;
+  }
+}
+@media print {
+  .sheet {
+    margin: 0;
+    box-shadow: none;
+  }
+  .sheet-viewport {
+    zoom: 1;
+  }
+}
