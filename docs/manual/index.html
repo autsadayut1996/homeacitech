@@ -375,10 +375,7 @@
             <li>แท็บ Storage → สร้าง Neon (Postgres) → Connect กับโปรเจกต์ ระบบอ่านตัวแปรฐานข้อมูลที่ Neon ตั้งให้ได้เอง ไม่ต้องตั้ง <code>DIRECT_URL</code></li>
             <li>Settings → Environment Variables: <code>APP_PASSWORD</code> (รหัสผ่านเข้าเว็บ) และ <code>ANTHROPIC_API_KEY</code></li>
             <li>Deployments → ⋯ → Redeploy หลังเพิ่มฐานข้อมูลหรือตัวแปร</li>
-            <li>ใส่ข้อมูลตั้งต้นครั้งเดียว จากเครื่องที่มี Node.js:
-              <pre>DATABASE_URL="ค่า DIRECT_URL" npx prisma db seed</pre>
-              <p class="note">คำสั่งนี้ลบข้อมูลเดิมทั้งหมดก่อนใส่ข้อมูลตัวอย่าง รันครั้งเดียวตอนเริ่มเท่านั้น</p>
-            </li>
+            <li>ไม่ต้องใส่ข้อมูลตั้งต้นเอง ทุกครั้งที่ deploy ระบบจะเพิ่มกฎหมาย วัสดุตัวอย่าง และค่าตั้งต้นของบริษัทให้ (เฉพาะส่วนที่ยังไม่มี ไม่เขียนทับสิ่งที่แอดมินแก้ไว้)</li>
           </ol>
         </details>
       </section>

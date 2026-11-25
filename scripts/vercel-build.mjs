@@ -23,4 +23,5 @@ console.log(`Database: ${host(database)}  ·  migrations via: ${host(direct)}`);
 const run = (cmd) => execSync(cmd, { stdio: "inherit", env: process.env });
 run("npx prisma generate");
 run("npx prisma migrate deploy");
+run("npx tsx prisma/seed-reference.ts");
 run("npx next build");

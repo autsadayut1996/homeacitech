@@ -43,8 +43,7 @@ npm test                      # unit tests (plan-core)
    - `APP_PASSWORD` — **recommended**: the app has no user accounts, so without this anyone with the URL can use it (and your Claude API credits)
    - `ANTHROPIC_API_KEY` — for AI floor plans
 4. Redeploy (Deployments → ⋯ → Redeploy) after adding the database or variables.
-5. Seed once from your machine (wipes all data first — run only on an empty database):
-   `DATABASE_URL="<unpooled connection string>" npx prisma db seed`
+5. Nothing to seed by hand: every deploy adds any missing reference data (regulation rules, sample material catalogue, company settings) via `prisma/seed-reference.ts`. It never overwrites or deletes existing rows, so admin edits are kept. Sample customers/projects come only from `npm run db:seed` (local development — it wipes the database).
 
 ## AI floor plans (M3)
 - Model: `claude-opus-5-5` (adaptive thinking, effort `high`), structured JSON output, server-side refusal fallback (`fallbacks: "default"`).
