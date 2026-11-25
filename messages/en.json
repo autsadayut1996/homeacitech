@@ -241,13 +241,8 @@
     "help": "Shortcuts: Ctrl+Z undo · Ctrl+Shift+Z redo · Delete remove · arrows nudge by one grid step · Esc cancel. The floor below is shown dashed on upper floors."
   },
   "studio": {
-    "title": "3D & materials",
-    "open": "3D & materials",
-    "mode_orbit": "Orbit",
-    "mode_walk": "Walk inside",
-    "hint_orbit": "Drag to rotate · scroll to zoom · right-drag to pan",
-    "hint_walk": "Click the view to start · W A S D or arrows to walk · Shift to run · Esc to exit",
-    "wholeHouse": "Whole house",
+    "title": "Materials & price",
+    "open": "Materials & price",
     "estimate": "Estimated price",
     "vsSaved": "vs version {n}",
     "breakdown": "Base construction {base} · material changes {up}",
@@ -274,9 +269,8 @@
     "unit_unit": "door",
     "unit_set": "set",
     "inUse": "In use",
-    "snap": "Use this view in quotations",
-    "snapHint": "Save the current 3D view as the quotation picture",
-    "snapSaved": "Picture saved"
+    "summaryTitle": "Difference by item",
+    "deltaNote": "Difference vs the Standard material of each item"
   },
   "compliance": {
     "title": "Preliminary building-regulation check",

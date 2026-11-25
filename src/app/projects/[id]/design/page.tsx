@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { PlanSchema } from "@/lib/plan-core";
 import { loadCatalog } from "@/lib/pricing/catalog";
 import { estimate } from "@/lib/pricing/materials";
-import { DesignStudio } from "@/components/three/DesignStudio";
+import { MaterialsStudio } from "@/components/MaterialsStudio";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +33,7 @@ export default async function DesignPage({ params, searchParams }: { params: Pro
           {t("title")} — {project.title} <span className="font-normal text-muted">v{version.number}</span>
         </h1>
       </div>
-      <DesignStudio
+      <MaterialsStudio
         projectId={id}
         baseVersion={{ id: version.id, number: version.number }}
         initialPlan={plan.data}

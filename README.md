@@ -1,6 +1,6 @@
 # House Design for Sales — ระบบออกแบบบ้านสำหรับเซลล์
 
-Web app ให้เซลล์บริษัทรับสร้างบ้านรับโจทย์ลูกค้า → สร้างแปลนด้วย AI → ปรับแก้ 2D/3D → ประเมินราคา BOQ → ตรวจกฎหมายเบื้องต้น → ออกใบเสนอราคา
+Web app ให้เซลล์บริษัทรับสร้างบ้านรับโจทย์ลูกค้า → สร้างแปลนด้วย AI → ปรับแก้แปลน 2D และเลือกวัสดุ → ประเมินราคา BOQ → ตรวจกฎหมายเบื้องต้น → ออกใบเสนอราคา
 
 > ⚠️ แบบและราคาในระบบเป็น **แบบร่างเพื่อการขาย** ไม่ใช่แบบก่อสร้าง ต้องให้สถาปนิก/วิศวกรผู้มีใบอนุญาตตรวจรับรองก่อนใช้งานจริง
 
@@ -65,11 +65,8 @@ npm test                      # unit tests (plan-core)
 - Saving always creates a new version; the source version is never overwritten.
 - Editing logic is pure and unit-tested in `src/lib/editor/` (`ops.ts`, `history.ts`).
 
-## 3D & materials (M5)
-`/projects/:id/design?v=<versionId>` — React Three Fiber view built from the same Plan JSON (`src/lib/three/scene.ts`, pure and unit-tested).
-- Walls with real openings (sills, lintels, glass, doors), floors, hip/gable/shed/butterfly/flat roofs, slabs over single-storey parts, balcony railings, plot and road.
-- Orbit view, per-floor cutaway (roof hidden), first-person walk mode (click the view, WASD).
-- Spec packages (Standard/Premium/Luxury) and per-slot materials; colours update the 3D instantly and the price change (+/−) is shown per option and vs the saved version.
+## Materials & price (M5 — 3D removed)
+`/projects/:id/design?v=<versionId>` — spec packages (Standard/Premium/Luxury) and per-item materials with live price changes (+/− per option, vs the package and vs the saved version). 3D visualisation was dropped on request: architects produce 3D from the DXF export.
 - Materials live in the `Material` table (sample prices seeded). Pricing = base rate × area + Σ quantity × (material − standard default) — `src/lib/pricing/materials.ts`; quantities from `takeoff()` in plan-core, which the BOQ (M6) will reuse.
 
 ## Building-regulation checks (M7)
@@ -102,7 +99,7 @@ Preliminary only — every screen says it must be certified by a licensed archit
 ## Quotations & contracts (M9)
 - Project page → "ออกใบเสนอราคา" (Thai or English). Each quotation gets a number (QT-YYYY-NNNN) and a **snapshot** of everything printed, so issued documents never change.
 - `/quotations/:id` and `/quotations/:id/contract`: A4 print layouts — "พิมพ์ / บันทึกเป็น PDF" uses the browser's Save-as-PDF, which renders Thai perfectly and needs no server-side PDF engine on Vercel.
-- Content: logo/company, customer & project, 3D picture (saved from the 3D studio with "📷 ใช้ภาพนี้ในใบเสนอราคา"), floor plans, specification, price lines (base + material upgrades), discount, VAT, total in words (Thai/English), payment instalments, terms, price-base reference and date, sales-draft disclaimer, signature boxes.
+- Content: logo/company, customer & project, floor plans, specification, price lines (base + material upgrades), discount, VAT, total in words (Thai/English), payment instalments, terms, price-base reference and date, sales-draft disclaimer, signature boxes.
 - "ร่าง / DRAFT" watermark on every page unless the price was approved when the quotation was issued.
 - Contract = admin-editable template with `{{placeholders}}` (wording must come from the company's legal team).
 - `/settings/company`: company details, logo, VAT, validity, sales discount limit, payment instalments (must total 100%), quotation terms, contract templates. Empty fields fall back to sample text, flagged as such.
@@ -112,7 +109,7 @@ Preliminary only — every screen says it must be certified by a licensed archit
 - [x] M2 Design brief form + plan data model, geometry, validator, metrics
 - [x] M3 AI floor-plan generation (Claude API) + validator retry loop + natural-language edits
 - [x] M4 2D editor
-- [x] M5 3D viewer + materials
+- [x] M5 Materials & packages (3D viewer removed on request)
 - [ ] M6 Excel price import + BOQ
 - [x] M7 Building-regulation rules engine (Bangkok first)
 - [x] M8 Versions + approvals

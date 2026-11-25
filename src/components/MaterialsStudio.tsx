@@ -1,7 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Plan } from "@/lib/plan-core";
@@ -14,25 +13,11 @@ import {
   selectMaterial,
   selectedMaterial,
   type CatalogMaterial,
-  type Slot,
 } from "@/lib/pricing/materials";
 import { savePlanVersion } from "@/app/projects/[id]/edit/actions";
-import { savePreviewImage } from "@/app/projects/[id]/quote-actions";
-import type { Colors } from "./HouseScene";
 
-const HouseScene = dynamic(() => import("./HouseScene"), { ssr: false, loading: () => <div className="grid h-full place-items-center text-sm text-muted">3D…</div> });
-
-/** Which 3D surface each material slot colours. */
-const SLOT_MAT: Partial<Record<Slot, keyof Colors>> = {
-  roof: "roof",
-  exterior_wall: "ext_wall",
-  interior_wall: "int_wall",
-  floor: "floor",
-  window: "window_frame",
-  door: "door",
-};
-
-export function DesignStudio({
+/** Spec packages and per-slot materials with live price changes (no 3D — the architect does that). */
+export function MaterialsStudio({
   projectId,
   baseVersion,
   initialPlan,
@@ -50,37 +35,12 @@ export function DesignStudio({
   const t = useTranslations("studio");
   const router = useRouter();
   const [plan, setPlan] = useState(initialPlan);
-  const [mode, setMode] = useState<"orbit" | "walk">("orbit");
-  const [showLevel, setShowLevel] = useState<number | "all">("all");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dirty = plan !== initialPlan;
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [snapMsg, setSnapMsg] = useState<string | null>(null);
-  const snapshot3d = async () => {
-    const c = canvasRef.current;
-    if (!c) return;
-    // downscale to keep the stored image small
-    const w = Math.min(1200, c.width);
-    const tmp = document.createElement("canvas");
-    tmp.width = w;
-    tmp.height = Math.round((c.height * w) / c.width);
-    tmp.getContext("2d")!.drawImage(c, 0, 0, tmp.width, tmp.height);
-    const r = await savePreviewImage(baseVersion.id, tmp.toDataURL("image/jpeg", 0.85));
-    setSnapMsg(r.ok ? t("snapSaved") : (r.error ?? "error"));
-  };
 
   const est = useMemo(() => estimate(plan, catalog), [plan, catalog]);
   const packageTotals = useMemo(() => Object.fromEntries(PACKAGES.map((p) => [p, estimate(applyPackage(plan, p), catalog).total])), [plan, catalog]);
-  const colors = useMemo(() => {
-    const c: Colors = {};
-    for (const slot of SLOTS) {
-      const key = SLOT_MAT[slot];
-      const m = selectedMaterial(plan, catalog, slot);
-      if (key && m) c[key] = { color: m.color, roughness: m.roughness };
-    }
-    return c;
-  }, [plan, catalog]);
 
   const nf = (n: number) => n.toLocaleString(locale === "th" ? "th-TH" : "en-US", { maximumFractionDigits: 0 });
   const baht = (n: number) => `฿${nf(n)}`;
@@ -104,38 +64,9 @@ export function DesignStudio({
   };
 
   return (
-    <div className="flex h-[calc(100vh-9rem)] min-h-[600px] gap-4">
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <div className="flex overflow-hidden rounded-md border border-line bg-paper">
-            {(["orbit", "walk"] as const).map((m) => (
-              <button key={m} onClick={() => setMode(m)} className={`px-3 py-1.5 ${mode === m ? "bg-ink text-white" : "hover:bg-bg"}`}>
-                {t(`mode_${m}`)}
-              </button>
-            ))}
-          </div>
-          <div className="flex overflow-hidden rounded-md border border-line bg-paper">
-            <button onClick={() => setShowLevel("all")} className={`px-3 py-1.5 ${showLevel === "all" ? "bg-accent text-white" : "hover:bg-bg"}`}>
-              {t("wholeHouse")}
-            </button>
-            {plan.levels.map((l, i) => (
-              <button key={l.id} onClick={() => setShowLevel(i)} className={`px-3 py-1.5 ${showLevel === i ? "bg-accent text-white" : "hover:bg-bg"}`}>
-                {l.name[locale]}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-muted">{t(`hint_${mode}`)}</p>
-          <button className="btn-ghost ml-auto px-2 py-1.5" onClick={snapshot3d} title={t("snapHint")}>
-            📷 {t("snap")}
-          </button>
-          {snapMsg && <span className="text-xs text-ok">{snapMsg}</span>}
-        </div>
-        <div id="house-3d" className="flex-1 overflow-hidden rounded-lg border border-line" data-testid="three-canvas">
-          <HouseScene key={mode} plan={plan} colors={colors} mode={mode} showLevel={showLevel} onCanvas={(c) => (canvasRef.current = c)} />
-        </div>
-      </div>
-
-      <aside className="flex w-96 shrink-0 flex-col gap-3 overflow-y-auto">
+    <div className="grid items-start gap-4 lg:grid-cols-[380px_minmax(0,1fr)]">
+      {/* summary: total, packages, per-slot breakdown */}
+      <aside className="space-y-3 lg:sticky lg:top-4">
         <div className="card space-y-2 p-4">
           <p className="text-xs text-muted">{t("estimate")}</p>
           <p className="text-2xl font-bold tabular-nums" data-testid="total">
@@ -146,9 +77,7 @@ export function DesignStudio({
               {signed(est.total - savedTotal)} {t("vsSaved", { n: baseVersion.number ?? "?" })}
             </p>
           )}
-          <p className="text-xs text-muted">
-            {t("breakdown", { base: baht(est.base), up: signed(est.materialsDelta) })}
-          </p>
+          <p className="text-xs text-muted">{t("breakdown", { base: baht(est.base), up: signed(est.materialsDelta) })}</p>
           {est.usesSamplePrices && <p className="rounded bg-amber-50 p-2 text-xs text-warn">⚠️ {t("samplePrices")}</p>}
           <div className="flex gap-2">
             <button className="btn-primary flex-1" disabled={!dirty || saving} onClick={save}>
@@ -182,6 +111,25 @@ export function DesignStudio({
           {Object.keys(plan.selections).length > 0 && <p className="mt-2 text-xs text-muted">{t("customised", { n: Object.keys(plan.selections).length })}</p>}
         </div>
 
+        <div className="card p-4">
+          <p className="mb-2 font-semibold">{t("summaryTitle")}</p>
+          <table className="w-full text-xs" data-testid="slot-summary">
+            <tbody>
+              {est.lines.map((l) => (
+                <tr key={l.slot} className="border-t border-line">
+                  <td className="py-1 pr-2 text-muted">{t(`slot_${l.slot}`)}</td>
+                  <td className="pr-2">{l.material ? name(l.material) : "—"}</td>
+                  <td className={`whitespace-nowrap text-right tabular-nums ${l.delta > 0 ? "text-warn" : l.delta < 0 ? "text-ok" : "text-muted"}`}>{signed(l.delta)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-2 text-xs text-muted">{t("deltaNote")}</p>
+        </div>
+      </aside>
+
+      {/* material choices */}
+      <div className="grid gap-3 md:grid-cols-2">
         {SLOTS.map((slot) => {
           const options = catalog.filter((m) => m.slot === slot);
           if (!options.length) return null;
@@ -224,7 +172,7 @@ export function DesignStudio({
             </div>
           );
         })}
-      </aside>
+      </div>
     </div>
   );
 }

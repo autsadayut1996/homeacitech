@@ -50,11 +50,7 @@ export async function QuotationDocument({ s }: { s: QuoteSnapshot }) {
       </div>
 
       <div className="doc-section">
-        <div className={`grid gap-2 ${s.previewImage ? "grid-cols-3" : s.plan.levels.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
-          {s.previewImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={s.previewImage} alt="3D" className="h-full w-full rounded border border-neutral-300 object-cover" />
-          )}
+        <div className={`grid gap-2 ${s.plan.levels.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
           {s.plan.levels.map((l, i) => (
             <figure key={l.id} className="rounded border border-neutral-300 p-1">
               <figcaption className="text-xs font-medium">{l.name[locale]}</figcaption>

@@ -85,7 +85,6 @@ export async function createQuotation(projectId: string, locale: "th" | "en"): P
     },
     version: { number: version.number, label: version.label },
     plan: plan.data,
-    previewImage: version.previewImage,
     areas: {
       total: m.totalAreaM2,
       indoor: m.indoorAreaM2,
@@ -120,13 +119,4 @@ export async function createQuotation(projectId: string, locale: "th" | "en"): P
   });
   revalidatePath(`/projects/${projectId}`);
   return { ok: true, quotationId: q.id };
-}
-
-/** Save the current 3D view as the picture used on quotations (does not create a new version). */
-export async function savePreviewImage(versionId: string, dataUrl: string): Promise<{ ok: boolean; error?: string }> {
-  if (!/^data:image\/(jpeg|png);base64,/.test(dataUrl)) return { ok: false, error: "invalid image" };
-  if (dataUrl.length > 2_000_000) return { ok: false, error: "image too large" };
-  const v = await db.designVersion.update({ where: { id: versionId }, data: { previewImage: dataUrl } });
-  revalidatePath(`/projects/${v.projectId}`);
-  return { ok: true };
 }

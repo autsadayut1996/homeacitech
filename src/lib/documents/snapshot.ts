@@ -14,7 +14,6 @@ export interface QuoteSnapshot {
   project: { code: string; title: string; location: string; buildingType: string | null; style: string | null };
   version: { number: number | null; label: string | null };
   plan: Plan;
-  previewImage: string | null;
   areas: { total: number; indoor: number; bedrooms: number; bathrooms: number; parking: number; landSqWa: number };
   /** Specification lines (material per slot). */
   spec: { slot: string; nameTh: string; nameEn: string; quantity: number; unit: string }[];
