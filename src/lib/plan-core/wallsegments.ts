@@ -24,7 +24,7 @@ export interface WallLayout {
   solids: [number, number][];
 }
 
-/** Split a wall into solid runs and openings (shared by the 3D model and the DXF export). */
+/** Split a wall into solid runs and openings (used by the DXF export). */
 export function layoutWall(level: Level, w: Wall): WallLayout {
   const horizontal = Math.abs(w.a[1] - w.b[1]) < TOL;
   const fixed = horizontal ? w.a[1] : w.a[0];

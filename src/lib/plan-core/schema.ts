@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * Plan JSON — the single source of truth.
- * 2D editor, 3D viewer, BOQ, compliance checks, PDF and (phase 2) DXF all read this.
+ * 2D editor, pricing/BOQ, compliance checks, quotations and the DXF export all read this.
  *
  * Conventions
  * - Units: metres. Frame: x to the right, y up (away from the front of the plot).
