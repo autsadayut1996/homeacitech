@@ -14,6 +14,7 @@ import { SitePlanSvg } from "@/components/SitePlanSvg";
 import { ElevationSvg } from "@/components/ElevationSvg";
 import { elevations } from "@/lib/plan-core";
 import { Watermark } from "./DocHeader";
+import { buildingCrop } from "@/components/drawings/overlays";
 import { QuotationLegacy } from "./QuotationLegacy";
 
 type L = { th: string; en: string };
@@ -312,7 +313,7 @@ export async function QuotationDocument({ s }: { s: QuoteSnapshot }) {
         <div className={`grid gap-2 ${s.plan.levels.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
           {s.plan.levels.map((l, i) => (
             <figure key={l.id} className="border border-neutral-300 p-1">
-              <SitePlanSvg site={s.plan.site} plan={s.plan} levelIndex={i} locale={s.locale} className="w-full" />
+              <SitePlanSvg site={s.plan.site} plan={s.plan} levelIndex={i} locale={s.locale} className="w-full" drafting crop={buildingCrop(s.plan, 1.5)} />
               <figcaption className="text-center text-xs font-semibold">
                 {p(L(l.name.th, l.name.en))} <span className="font-normal text-neutral-500">{o(L(l.name.th, l.name.en))}</span>
               </figcaption>

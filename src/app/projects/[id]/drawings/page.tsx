@@ -97,13 +97,13 @@ export default async function DrawingsPage({ params, searchParams }: { params: P
       ),
     });
 
-  planSheet("A-01", "ผังบริเวณ", "SITE PLAN", <SitePlanSvg site={plan.site} plan={plan} levelIndex={0} locale="th" style={planStyle} />);
+  planSheet("A-01", "ผังบริเวณ", "SITE PLAN", <SitePlanSvg site={plan.site} plan={plan} levelIndex={0} locale="th" style={planStyle} drafting furnish={false} />);
   plan.levels.forEach((l, i) =>
     planSheet(
       `A-${String(i + 2).padStart(2, "0")}`,
       `แปลนพื้น${l.name.th}`,
       `${l.name.en.toUpperCase()} PLAN`,
-      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" style={floorStyle} crop={crop} roomAreas={false}>
+      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" style={floorStyle} crop={crop} roomAreas={false} drafting>
         <GridOverlay plan={plan} levelIndex={i} />
         <PlanTags plan={plan} levelIndex={i} marks={marks} />
         <SectionMarks plan={plan} />
@@ -138,7 +138,7 @@ export default async function DrawingsPage({ params, searchParams }: { params: P
     "A-30",
     "ผังหลังคา",
     "ROOF PLAN",
-    <SitePlanSvg site={plan.site} plan={plan} levelIndex={plan.levels.length - 1} locale="th" showRooms={false} style={floorStyle} crop={crop}>
+    <SitePlanSvg site={plan.site} plan={plan} levelIndex={plan.levels.length - 1} locale="th" showRooms={false} style={floorStyle} crop={crop} drafting>
       <GridOverlay plan={plan} levelIndex={plan.levels.length - 1} />
       <RoofPlanOverlay plan={plan} />
     </SitePlanSvg>,
@@ -156,7 +156,7 @@ export default async function DrawingsPage({ params, searchParams }: { params: P
       `E-${String(i + 1).padStart(2, "0")}`,
       `ผังไฟฟ้า${l.name.th}`,
       `${l.name.en.toUpperCase()} ELECTRICAL PLAN`,
-      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" muted style={floorStyle} crop={crop}>
+      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" muted style={floorStyle} crop={crop} drafting furnish={false}>
         <GridOverlay plan={plan} levelIndex={i} />
         <MepOverlay plan={plan} layout={mep} levelId={l.id} kinds={ELECTRICAL} showRuns={false} />
       </SitePlanSvg>,
@@ -169,7 +169,7 @@ export default async function DrawingsPage({ params, searchParams }: { params: P
       `S-${String(i + 1).padStart(2, "0")}`,
       `ผังสุขาภิบาล${l.name.th}`,
       `${l.name.en.toUpperCase()} SANITARY PLAN`,
-      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" muted style={floorStyle} crop={crop}>
+      <SitePlanSvg site={plan.site} plan={plan} levelIndex={i} locale="th" muted style={floorStyle} crop={crop} drafting furnish={false}>
         <GridOverlay plan={plan} levelIndex={i} />
         <MepOverlay plan={plan} layout={mep} levelId={l.id} kinds={SANITARY} showRuns />
       </SitePlanSvg>,

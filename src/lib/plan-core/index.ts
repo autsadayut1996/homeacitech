@@ -14,3 +14,4 @@ export * from "./roofplan";
 export * from "./section";
 export * from "./mep";
 export * from "./annotate";
+export * from "./furniture";

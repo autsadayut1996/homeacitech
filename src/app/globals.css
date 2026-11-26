@@ -75,6 +75,17 @@ body {
   font-size: 12.5px;
   line-height: 1.55;
 }
+.doc-paper {
+  --window: #111;
+  --door: #111;
+}
+/* drafting plans: white halo keeps room names readable over furniture */
+.plan-drafting text {
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 0.07px;
+  stroke-linejoin: round;
+}
 .doc-paper table {
   width: 100%;
   border-collapse: collapse;
@@ -213,6 +224,8 @@ body {
   --room: #fff;
   --wet: #eef5fb;
   --outdoor: #f5f5f5;
+  --window: #111;
+  --door: #111;
 }
 .sheet:last-child {
   break-after: auto;

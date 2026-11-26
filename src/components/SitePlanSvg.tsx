@@ -8,6 +8,8 @@ import {
   centroid,
   deriveWalls,
   edges,
+  furniture,
+  openingSymbols,
   outwardNormal,
   pointAlong,
   polygonToSite,
@@ -43,7 +45,27 @@ interface Props {
   crop?: { x: number; y: number; w: number; h: number };
   /** Room names with the area under them (default) or without (when room tags carry the data). */
   roomAreas?: boolean;
+  /** Construction-drawing look: black and white, door swings, window lines and furniture. */
+  drafting?: boolean;
+  /** With `drafting`: draw furniture (default) — off for electrical / sanitary sheets. */
+  furnish?: boolean;
 }
+
+/** Colour variables for the black-and-white drafting look. */
+const MONO = {
+  "--room": "#fff",
+  "--wet": "#fff",
+  "--outdoor": "#fff",
+  "--land": "#fff",
+  "--road": "#fff",
+  "--door": "#111",
+  "--window": "#111",
+  "--muted": "#444",
+  "--accent": "#111",
+  "--setback": "#111",
+  "--ink": "#111",
+  "--bad-bg": "#fff",
+} as React.CSSProperties;
 
 const PAD = 1.5;
 
@@ -59,6 +81,15 @@ function roadPolygons(site: Site) {
   });
 }
 
+function ShapeSvg({ sh, plan, X, Y, w }: { sh: ReturnType<typeof furniture>[number]; plan: Plan; X: (p: Point) => number; Y: (p: Point) => number; w: number }) {
+  if (sh.kind === "circle") {
+    const c = toSite(plan, sh.c);
+    return <circle cx={X(c)} cy={Y(c)} r={sh.r} strokeWidth={w} />;
+  }
+  const pts = sh.pts.map((p) => toSite(plan, p)).map((p) => `${X(p).toFixed(3)},${Y(p).toFixed(3)}`).join(" ");
+  return sh.closed ? <polygon points={pts} strokeWidth={w} /> : <polyline points={pts} strokeWidth={w} />;
+}
+
 /** Mapping between site coordinates and this SVG's user units (for click handling). */
 export function siteSvgFrame(site: Site) {
   const all = [...site.boundary, ...roadPolygons(site).flatMap((r) => r?.poly ?? [])];
@@ -72,7 +103,7 @@ export function siteSvgFrame(site: Site) {
   };
 }
 
-export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], marks = [], pins = [], onSvgClick, showRooms = true, muted = false, children, style, className, crop, roomAreas = true }: Props) {
+export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = [], marks = [], pins = [], onSvgClick, showRooms = true, muted = false, children, style, className, crop, roomAreas = true, drafting = false, furnish = true }: Props) {
   const roadPolys = roadPolygons(site);
   const all = [...site.boundary, ...roadPolys.flatMap((r) => r?.poly ?? [])];
   const bb = bbox(all);
@@ -93,7 +124,7 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
   const arrowC: Point = crop ? [crop.x + crop.w - 0.9, crop.y + 0.9] : [W - PAD * 0.9, PAD * 0.9];
 
   return (
-    <svg viewBox={crop ? `${crop.x} ${crop.y} ${crop.w} ${crop.h}` : `0 0 ${W} ${H}`} className={className} role="img" style={{ background: "var(--paper)", ...style }} onClick={onSvgClick}>
+    <svg data-drafting={drafting || undefined} viewBox={crop ? `${crop.x} ${crop.y} ${crop.w} ${crop.h}` : `0 0 ${W} ${H}`} className={drafting ? `plan-drafting ${className ?? ""}` : className} role="img" style={{ ...(drafting ? MONO : {}), background: "var(--paper)", ...style }} onClick={onSvgClick}>
       {roadPolys.map(
         (r, i) =>
           r && (
@@ -156,10 +187,20 @@ export function SitePlanSvg({ site, plan, levelIndex = 0, locale, highlight = []
             return (
               <g key={o.id}>
                 <line x1={X(a)} y1={Y(a)} x2={X(b)} y2={Y(b)} stroke="var(--paper)" strokeWidth={0.22} />
-                {o.kind !== "opening" && <line x1={X(a)} y1={Y(a)} x2={X(b)} y2={Y(b)} stroke={color} strokeWidth={o.kind === "window" ? 0.08 : 0.12} />}
+                {!drafting && o.kind !== "opening" && <line x1={X(a)} y1={Y(a)} x2={X(b)} y2={Y(b)} stroke={color} strokeWidth={o.kind === "window" ? 0.08 : 0.12} />}
               </g>
             );
           })}
+          {drafting && (
+            <g fill="none" stroke="var(--ink)" strokeLinejoin="round" data-testid="drafting-symbols">
+              {openingSymbols(plan, level).map((sh, i) => (
+                <ShapeSvg key={`o${i}`} sh={sh} plan={plan} X={X} Y={Y} w={0.02} />
+              ))}
+              {(furnish ? furniture(plan, level) : []).map((sh, i) => (
+                <ShapeSvg key={`f${i}`} sh={sh} plan={plan} X={X} Y={Y} w={0.015} />
+              ))}
+            </g>
+          )}
         </g>
       )}
 

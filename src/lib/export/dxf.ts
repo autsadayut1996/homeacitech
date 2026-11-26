@@ -35,6 +35,7 @@ import {
   uniqSorted,
   columns,
   fmtLevel,
+  furniture,
   openingMarks,
   openingMarkPosition,
   plinthOf,
@@ -63,6 +64,7 @@ export const LAYERS = {
   "P-FIXT": { color: 5, ltype: "CONTINUOUS", th: "สุขาภิบาล: สุขภัณฑ์ ถังบำบัด" },
   "P-SANR": { color: 34, ltype: "CONTINUOUS", th: "สุขาภิบาล: ท่อน้ำทิ้ง (แนวโดยประมาณ)" },
   "P-DOMW": { color: 4, ltype: "DASHED", th: "สุขาภิบาล: ท่อน้ำดี (แนวโดยประมาณ)" },
+  "A-FURN": { color: 8, ltype: "CONTINUOUS", th: "เฟอร์นิเจอร์และสุขภัณฑ์ (แสดงประกอบ)" },
   "S-GRID": { color: 1, ltype: "DASHED", th: "เส้นกริดโครงสร้าง" },
   "S-GRID-IDEN": { color: 1, ltype: "CONTINUOUS", th: "หัวกริด (วงกลม/เลข)" },
   "S-COLS": { color: 7, ltype: "CONTINUOUS", th: "เสา (ตำแหน่ง)" },
@@ -350,6 +352,12 @@ function drawLevel(w: Writer, plan: Plan, level: Level, li: number, off: Point, 
     dim([xs[0], y0 - 1.8], [xs[xs.length - 1], y0 - 1.8], (xs[xs.length - 1] - xs[0]).toFixed(2), false);
     ys.slice(0, -1).forEach((y, i) => dim([x0 - 1, y], [x0 - 1, ys[i + 1]], (ys[i + 1] - y).toFixed(2), true));
     dim([x0 - 1.8, ys[0]], [x0 - 1.8, ys[ys.length - 1]], (ys[ys.length - 1] - ys[0]).toFixed(2), true);
+  }
+
+  // furniture and fittings (illustrative)
+  for (const sh of furniture(plan, level)) {
+    if (sh.kind === "circle") w.circle("A-FURN", S(sh.c), sh.r);
+    else w.poly("A-FURN", sh.pts.map(S), sh.closed);
   }
 
   // structural grid, columns, room tags, door / window marks
